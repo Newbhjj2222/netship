@@ -1,10 +1,10 @@
 import dynamic from "next/dynamic";
 
-const FootballScene = dynamic(
-  () => import("../components/FootballScene"),
+const Welcome3D = dynamic(
+  () => import("../components/Welcome3D"),
   { ssr: false }
 );
 
 export default function Home() {
-  return <FootballScene />;
+  return <Welcome3D />;
 }
