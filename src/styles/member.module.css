@@ -1,36 +1,40 @@
+/* styles/member.module.css */
+
+/* ===== CONTAINER ===== */
 .container {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-  text-align: center;
-  font-family: Arial, Helvetica, sans-serif;
-  color: var(--foreground);
-  background: var(--background);
+  margin: 70px auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
 }
 
+/* ===== PAGE TITLE ===== */
 .container h1 {
-  margin-bottom: 2rem;
+  text-align: center;
+  margin-bottom: 30px;
   font-size: 2rem;
+  color: #111;
 }
 
+/* ===== CARDS WRAPPER ===== */
 .cardsWrapper {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
 }
 
+/* ===== INDIVIDUAL CARD ===== */
 .card {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: #fff;
   border-radius: 12px;
-  padding: 1.5rem;
-  width: 250px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
@@ -38,93 +42,107 @@
   box-shadow: 0 6px 18px rgba(0,0,0,0.15);
 }
 
-.card .icon {
+/* ===== ICON ===== */
+.icon {
   font-size: 3rem;
-  margin-bottom: 0.5rem;
   color: #4a90e2;
+  margin-bottom: 15px;
 }
 
+/* ===== ROLE LABEL ===== */
 .card h2 {
-  margin-bottom: 0.5rem;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  color: #222;
 }
 
-.card p {
-  margin-bottom: 1rem;
+/* ===== BADGES ===== */
+.activeBadge {
+  display: inline-block;
+  background-color: #28a745;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
   font-size: 0.9rem;
-  text-align: center;
+  margin-bottom: 10px;
 }
 
+.nonActiveBadge {
+  display: inline-block;
+  background-color: #dc3545;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+/* ===== DESCRIPTION ===== */
+.card p {
+  font-size: 1rem;
+  margin-bottom: 15px;
+  line-height: 1.4;
+  color: #555;
+}
+
+/* ===== WHATSAPP BUTTON ===== */
 .whatsappBtn {
+  background-color: #25D366;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #25d366;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s;
+  gap: 8px;
+  transition: background-color 0.2s ease;
 }
 
 .whatsappBtn:hover {
   background-color: #1ebe5d;
 }
 
-/* Badge for membership status */
-.membershipBadge {
-  margin-top: 0.5rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: bold;
-}
-
-.membershipBadge.active {
-  background-color: #4caf50;
-  color: white;
-}
-
-.membershipBadge.expired {
-  background-color: #f44336;
-  color: white;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .card {
-    width: 220px;
-  }
-  .card .icon {
-    font-size: 2.5rem;
-  }
-}
-
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .cardsWrapper {
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
-  .card {
-    width: 200px;
-    padding: 1rem;
+
+  .card h2 {
+    font-size: 1.1rem;
+  }
+
+  .icon {
+    font-size: 2.5rem;
+  }
+
+  .whatsappBtn {
+    font-size: 0.85rem;
+    padding: 8px 16px;
   }
 }
 
 @media (max-width: 480px) {
   .cardsWrapper {
-    flex-direction: column;
-    align-items: center;
+    grid-template-columns: 1fr;
   }
-  .card {
-    width: 90%;
+
+  .container {
+    padding: 15px;
   }
+
+  .icon {
+    font-size: 2rem;
+  }
+
   .card h2 {
     font-size: 1rem;
   }
-  .card .icon {
-    font-size: 2rem;
+
+  .whatsappBtn {
+    font-size: 0.8rem;
+    padding: 6px 14px;
   }
 }
