@@ -1,33 +1,36 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signInWithPopup,
-  GoogleAuthProvider,
-} from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth, db } from "../components/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import Cookies from "js-cookie";
-import Link from "next/link";
-import styles from "../styles/Login.module.css";
 import Image from "next/image";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { FiCopy, FiShare2 } from "react-icons/fi";
 
-// THREE
-import { Canvas } from "@react-three/fiber";
+import styles from "../styles/Login.module.css";
 
+// 3D Background Component
 function Bg() {
+  const meshRef = useRef();
+  useFrame(() => {
+    if (meshRef.current) {
+      meshRef.current.rotation.x += 0.002;
+      meshRef.current.rotation.y += 0.003;
+    }
+  });
+
   return (
-    <mesh rotation={[0.3, 0.4, 0]}>
+    <mesh ref={meshRef}>
       <boxGeometry args={[3, 3, 3]} />
       <meshStandardMaterial color="#008489" wireframe />
     </mesh>
   );
 }
 
-export default function Login() {
+const Login = () => {
   const router = useRouter();
   const provider = new GoogleAuthProvider();
 
@@ -36,116 +39,70 @@ export default function Login() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ===== SAVE COOKIE =====
-  const saveUser = (user) => {
-    Cookies.set("user", JSON.stringify(user), { expires: 7 });
-  };
-
-  // ===== GET USERNAME =====
-  const getUsername = async (email) => {
-    const ref = doc(db, "userdate", "data");
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) return "User";
-
-    const data = snap.data();
-    for (let key in data) {
-      if (data[key].email === email) {
-        return data[key].fName || "User";
-      }
+  // ✅ Auto login if user in cookies
+  useEffect(() => {
+    const userCookie = Cookies.get("user");
+    if (userCookie) {
+      router.replace("/");
     }
-    return "User";
-  };
+  }, [router]);
 
-  // ===== EMAIL LOGIN =====
+  // EMAIL/PASSWORD LOGIN
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
     try {
-      const res = await signInWithEmailAndPassword(auth, email, password);
-      const user = res.user;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      const username = await getUsername(email);
-
-      saveUser({
+      Cookies.set("user", JSON.stringify({
         uid: user.uid,
         email: user.email,
-        username,
-      });
+        username: user.displayName || "User"
+      }), { expires: 7 });
 
+      setMessage("Winjiye neza!");
       router.replace("/");
-    } catch (err) {
-      setMessage("Login failed: " + err.message);
+    } catch (error) {
+      setMessage("Kwinjira ntibishobotse: " + error.message);
       setLoading(false);
     }
   };
 
-  // ===== GOOGLE LOGIN =====
+  // GOOGLE LOGIN
   const handleGoogleLogin = async () => {
     setLoading(true);
-
+    setMessage("");
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      await saveGoogleUser(user);
-
-      saveUser({
+      Cookies.set("user", JSON.stringify({
         uid: user.uid,
         email: user.email,
-        username: user.displayName || "User",
-      });
+        username: user.displayName || "User"
+      }), { expires: 7 });
 
+      setMessage("Winjiye neza ukoresheje Google!");
       router.replace("/");
-    } catch (err) {
-      setMessage("Google login failed");
+    } catch (error) {
+      setMessage("Google login ntibishobotse: " + error.message);
       setLoading(false);
     }
   };
 
-  // ===== SAVE GOOGLE USER =====
-  const saveGoogleUser = async (user) => {
-    const ref = doc(db, "userdate", "data");
-    const snap = await getDoc(ref);
-    const data = snap.exists() ? snap.data() : {};
-
-    if (!data[user.uid]) {
-      await setDoc(ref, {
-        ...data,
-        [user.uid]: {
-          fName: user.displayName,
-          email: user.email,
-        },
-      });
-    }
-  };
-
-  // ===== RESET PASSWORD =====
-  const handleResetPassword = async () => {
-    if (!email) {
-      setMessage("Andika email");
-      return;
-    }
-
-    await sendPasswordResetEmail(auth, email);
-    setMessage("Email yo guhindura password yoherejwe");
-  };
-
   return (
-    <>
-      {/* 3D BACKGROUND */}
-      <div className={styles.canvasBg}>
-        <Canvas>
-          <ambientLight />
-          <Bg />
-        </Canvas>
-      </div>
+    <div style={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
+      {/* 3D Background */}
+      <Canvas className={styles.canvasBg}>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} />
+        <Bg />
+      </Canvas>
 
-      {/* LOADING */}
-      {loading && <div className={styles.loader}>Loading...</div>}
-
+      {/* Login Container */}
       <div className={styles.container}>
         <h2 className={styles.title}>Sign In</h2>
 
@@ -156,40 +113,44 @@ export default function Login() {
             type="email"
             placeholder="Email"
             required
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-
           <input
             type="password"
             placeholder="Password"
             required
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-
-          <button className={styles.btn}>Sign In</button>
-
-          <button
-            type="button"
-            className={styles.reset}
-            onClick={handleResetPassword}
-          >
+          <button type="submit" className={styles.btn}>
+            Sign In
+          </button>
+          <button type="button" className={styles.reset} onClick={() => alert("Reset password logic")}>
             Forgot password?
           </button>
 
-          <button
-            type="button"
-            className={styles.googleBtn}
-            onClick={handleGoogleLogin}
-          >
-            <Image src="/google.svg" alt="g" width={20} height={20} />
-            Continue with Google
+          {/* Google Login */}
+          <button type="button" className={styles.googleBtn} onClick={handleGoogleLogin}>
+            <Image src="/google.svg" width={20} height={20} alt="Google" />
+            <span>Continue with Google</span>
           </button>
         </form>
 
-        <p className={styles.link}>
-          Nta konti? <Link href="/register">Iyandikishe</Link>
+        <p style={{ textAlign: "center", marginTop: "15px" }}>
+          Nta konti ufite? <a href="/register">Iyandikishe hano</a>
         </p>
       </div>
-    </>
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.spinner}></div>
+          <p>Tegereza gato...</p>
+        </div>
+      )}
+    </div>
   );
-}
+};
+
+export default Login;
