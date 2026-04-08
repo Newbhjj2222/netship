@@ -1,31 +1,29 @@
 .container {
-  padding: 20px;
   display: flex;
-  perspective: 1000px;
   justify-content: center;
+  padding: 20px;
 }
+
 .book {
-  max-width: 800px;
   width: 100%;
+  max-width: 800px;
   background: var(--color-background);
   padding: 20px;
   border-radius: 12px;
-
-  /* subtle 3D */
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-.book:hover {
-  transform: perspective(1000px) rotateY(2deg);
+.title {
+  font-size: 22px;
+  font-weight: bold;
 }
 
+/* STORY */
 .story {
   margin-top: 15px;
   line-height: 1.8;
   font-size: 16px;
-  letter-spacing: 0.3px;
 }
-
 
 /* ACTIONS */
 .actions {
@@ -35,49 +33,69 @@
   gap: 10px;
 }
 
-.actions button {
+.btn {
+  padding: 8px 12px;
+  background: #ddd;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
   padding: 8px 12px;
   border: none;
+  border-radius: 8px;
+
   background: #008489;
   color: white;
-  border-radius: 6px;
   cursor: pointer;
 }
 
 /* COMMENTS */
-.comments {
-  margin-top: 30px;
+.commentsSection {
+  margin-top: 40px;
 }
 
 .commentBox {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .commentBox input {
   flex: 1;
-  padding: 8px;
+  padding: 10px;
 }
 
-.comment {
+.commentBox button {
+  padding: 10px;
+  background: #008489;
+  color: white;
+  border: none;
+}
+
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.commentItem {
+  padding: 10px;
   background: rgba(0,0,0,0.05);
-  padding: 8px;
-  border-radius: 6px;
-  margin-bottom: 5px;
+  border-radius: 8px;
 }
 
 /* MOBILE */
 @media (max-width: 600px) {
-  .book {
-    padding: 15px;
+  .story {
+    font-size: 15px;
   }
 
   .actions {
     flex-direction: column;
-  }
-  .story {
-    font-size: 15px;
-    line-height: 1.7;
   }
 }
