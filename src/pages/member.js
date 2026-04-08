@@ -6,6 +6,7 @@ import { FaUser, FaUserTie, FaHandsHelping, FaWhatsapp } from "react-icons/fa";
 import styles from "../styles/member.module.css";
 
 export async function getServerSideProps({ req }) {
+  // ===== PARSE COOKIES =====
   const cookies = req.headers.cookie || "";
   const parsedCookies = cookie.parse(cookies);
   const userCookie = parsedCookies.user ? JSON.parse(parsedCookies.user) : null;
@@ -16,29 +17,24 @@ export async function getServerSideProps({ req }) {
 
   const username = userCookie.username;
 
-  // ===== CHECK ROLES IN DATABASE =====
+  // ===== CHECK ROLES =====
   const roles = ["member", "umujyanama", "umuterankunga"];
   let roleData = {};
 
   for (let role of roles) {
     const q = query(collection(db, role + "s"), where("username", "==", username));
     const snap = await getDocs(q);
-
     if (!snap.empty) {
       const data = snap.docs[0].data();
-      // For members, check if subscription is still active
+      // check membership expiry if role is member
       if (role === "member") {
-        const expires = data.subscriptionExpiresAt?.toDate?.() || new Date(0);
         const now = new Date();
-        roleData[role] = {
-          ...data,
-          active: data.isMember && expires >= now,
-          expires,
-        };
+        const expires = data.subscriptionExpiresAt?.toDate?.() || new Date(0);
+        data.active = data.isMember && expires > now;
       } else {
-        // Umujyanama or Umuterankunga are active if they exist
-        roleData[role] = { ...data, active: true };
+        data.active = true; // umujyanama & umuterankunga always active
       }
+      roleData[role] = data;
     } else {
       roleData[role] = { active: false };
     }
@@ -49,44 +45,56 @@ export async function getServerSideProps({ req }) {
 
 export default function MemberPage({ username, roleData }) {
   const goWhatsApp = (role) => {
-    const number = "250722319367";
-    const message = `Muraho, ndifuza ubufasha ku bijyanye na ${role}.`;
-    const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    if (typeof window !== "undefined") {
+      const number = "250722319367";
+      const message = `Muraho, ndifuza ubufasha ku bijyanye na ${role}.`;
+      const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+      window.open(url, "_blank");
+    }
   };
 
   const roles = [
-    { key: "member", label: "Membership", icon: <FaUser size={40} /> },
-    { key: "umujyanama", label: "Umujyanama", icon: <FaUserTie size={40} /> },
-    { key: "umuterankunga", label: "Umuterankunga", icon: <FaHandsHelping size={40} /> },
+    {
+      key: "member",
+      label: "Membership",
+      icon: <FaUser />,
+    },
+    {
+      key: "umujyanama",
+      label: "Umujyanama",
+      icon: <FaUserTie />,
+    },
+    {
+      key: "umuterankunga",
+      label: "Umuterankunga",
+      icon: <FaHandsHelping />,
+    },
   ];
 
   return (
     <div className={styles.container}>
       <h1>Profile ya {username}</h1>
+
       <div className={styles.cardsWrapper}>
         {roles.map((role) => {
-          const data = roleData[role.key];
+          const data = roleData[role.key] || { active: false };
+          const isActive = data.active;
           return (
             <div key={role.key} className={styles.card}>
               <div className={styles.icon}>{role.icon}</div>
               <h2>{role.label}</h2>
+              <span className={isActive ? styles.activeBadge : styles.nonActiveBadge}>
+                {isActive ? "Active" : "Non-Active"}
+              </span>
 
-              <p className={data.active ? styles.activeBadge : styles.nonActiveBadge}>
-                {data.active ? "Active" : "Non-Active"}
-              </p>
-
-              {/* Membership expiration date */}
-              {role.key === "member" && data.active && data.expires && (
-                <p className={styles.dates}>
-                  Igihe izarangirira: {data.expires.toLocaleDateString()}
+              {/* Membership dates */}
+              {role.key === "member" && data.subscriptionExpiresAt?.toDate && (
+                <p>
+                  Igihe izarangirira: {data.subscriptionExpiresAt.toDate().toLocaleDateString()}
                 </p>
               )}
 
-              <button
-                className={styles.whatsappBtn}
-                onClick={() => goWhatsApp(role.label)}
-              >
+              <button onClick={() => goWhatsApp(role.label)} className={styles.whatsappBtn}>
                 <FaWhatsapp /> Twandikire
               </button>
             </div>
