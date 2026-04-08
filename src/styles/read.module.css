@@ -1,9 +1,9 @@
 .container {
   padding: 20px;
   display: flex;
+  perspective: 1000px;
   justify-content: center;
 }
-
 .book {
   max-width: 800px;
   width: 100%;
@@ -11,9 +11,8 @@
   padding: 20px;
   border-radius: 12px;
 
-  /* 3D effect */
-  transform: perspective(1000px) rotateY(0deg);
-  transition: transform 0.6s ease;
+  /* subtle 3D */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
 .book:hover {
@@ -22,8 +21,11 @@
 
 .story {
   margin-top: 15px;
-  line-height: 1.7;
+  line-height: 1.8;
+  font-size: 16px;
+  letter-spacing: 0.3px;
 }
+
 
 /* ACTIONS */
 .actions {
@@ -73,5 +75,9 @@
 
   .actions {
     flex-direction: column;
+  }
+  .story {
+    font-size: 15px;
+    line-height: 1.7;
   }
 }
