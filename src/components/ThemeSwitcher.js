@@ -75,6 +75,7 @@ export default function ThemeSwitcher() {
       <style jsx>{`
         .theme-switcher {
           width: 100%;
+          margin-bottom: 120px;
           display: flex;
           justify-content: center;
           padding: 0.5rem;
@@ -99,7 +100,7 @@ export default function ThemeSwitcher() {
           border: 1px solid rgba(0,0,0,0.2);
           font-size: 0.8rem;
           background: var(--background);
-          color: var(--foreground);
+          color: blue;
         }
 
         svg {
