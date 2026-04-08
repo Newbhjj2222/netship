@@ -3,10 +3,14 @@
   margin: 0 auto;
   padding: 2rem 1rem;
   text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--foreground);
+  background: var(--background);
 }
 
-h1 {
+.container h1 {
   margin-bottom: 2rem;
+  font-size: 2rem;
 }
 
 .cardsWrapper {
@@ -26,14 +30,15 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
 }
 
-.icon {
+.card .icon {
   font-size: 3rem;
   margin-bottom: 0.5rem;
   color: #4a90e2;
@@ -41,20 +46,23 @@ h1 {
 
 .card h2 {
   margin-bottom: 0.5rem;
+  font-size: 1.2rem;
 }
 
 .card p {
   margin-bottom: 1rem;
   font-size: 0.9rem;
+  text-align: center;
 }
 
 .whatsappBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   background-color: #25d366;
-  color: white;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -66,13 +74,42 @@ h1 {
   background-color: #1ebe5d;
 }
 
+/* Badge for membership status */
+.membershipBadge {
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.membershipBadge.active {
+  background-color: #4caf50;
+  color: white;
+}
+
+.membershipBadge.expired {
+  background-color: #f44336;
+  color: white;
+}
+
 /* Responsive */
+@media (max-width: 1024px) {
+  .card {
+    width: 220px;
+  }
+  .card .icon {
+    font-size: 2.5rem;
+  }
+}
+
 @media (max-width: 768px) {
+  .cardsWrapper {
+    gap: 1rem;
+  }
   .card {
     width: 200px;
-  }
-  .icon {
-    font-size: 2.5rem;
+    padding: 1rem;
   }
 }
 
@@ -83,5 +120,11 @@ h1 {
   }
   .card {
     width: 90%;
+  }
+  .card h2 {
+    font-size: 1rem;
+  }
+  .card .icon {
+    font-size: 2rem;
   }
 }
