@@ -1,36 +1,16 @@
+// pages/login.js
 'use client';
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth, db } from "../components/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import Cookies from "js-cookie";
 import Image from "next/image";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { FiCopy, FiShare2 } from "react-icons/fi";
-
 import styles from "../styles/Login.module.css";
 
-// 3D Background Component
-function Bg() {
-  const meshRef = useRef();
-  useFrame(() => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x += 0.002;
-      meshRef.current.rotation.y += 0.003;
-    }
-  });
-
-  return (
-    <mesh ref={meshRef}>
-      <boxGeometry args={[3, 3, 3]} />
-      <meshStandardMaterial color="#008489" wireframe />
-    </mesh>
-  );
-}
-
-const Login = () => {
+export default function LoginPage() {
   const router = useRouter();
   const provider = new GoogleAuthProvider();
 
@@ -39,16 +19,14 @@ const Login = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Auto login if user in cookies
+  // Auto redirect if user cookie exists
   useEffect(() => {
     const userCookie = Cookies.get("user");
-    if (userCookie) {
-      router.replace("/");
-    }
+    if (userCookie) router.replace("/"); // user already logged in
   }, [router]);
 
-  // EMAIL/PASSWORD LOGIN
-  const handleLogin = async (e) => {
+  // ===== Email/Password Login =====
+  const handleEmailLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
@@ -57,100 +35,97 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Save cookie
       Cookies.set("user", JSON.stringify({
         uid: user.uid,
         email: user.email,
         username: user.displayName || "User"
       }), { expires: 7 });
 
+      // Ensure membership exists in Firestore
+      const memberRef = doc(db, "members", user.uid);
+      const memberSnap = await getDoc(memberRef);
+      if (!memberSnap.exists()) {
+        await setDoc(memberRef, {
+          uid: user.uid,
+          username: user.displayName || "User",
+          isMember: true,
+          subscriptionExpiresAt: new Date(Date.now() + 365*24*60*60*1000),
+          createdAt: serverTimestamp(),
+        });
+      }
+
       setMessage("Winjiye neza!");
       router.replace("/");
-    } catch (error) {
-      setMessage("Kwinjira ntibishobotse: " + error.message);
+    } catch (err) {
+      setMessage("Kwinjira ntibishobotse: " + err.message);
+    } finally {
       setLoading(false);
     }
   };
 
-  // GOOGLE LOGIN
+  // ===== Google Login =====
   const handleGoogleLogin = async () => {
     setLoading(true);
     setMessage("");
+
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
+      // Save cookie
       Cookies.set("user", JSON.stringify({
         uid: user.uid,
         email: user.email,
         username: user.displayName || "User"
       }), { expires: 7 });
 
+      // Ensure membership exists in Firestore
+      const memberRef = doc(db, "members", user.uid);
+      const memberSnap = await getDoc(memberRef);
+      if (!memberSnap.exists()) {
+        await setDoc(memberRef, {
+          uid: user.uid,
+          username: user.displayName || "User",
+          isMember: true,
+          subscriptionExpiresAt: new Date(Date.now() + 365*24*60*60*1000),
+          createdAt: serverTimestamp(),
+        });
+      }
+
       setMessage("Winjiye neza ukoresheje Google!");
       router.replace("/");
-    } catch (error) {
-      setMessage("Google login ntibishobotse: " + error.message);
+    } catch (err) {
+      setMessage("Google login ntibishobotse: " + err.message);
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
-      {/* 3D Background */}
-      <Canvas className={styles.canvasBg}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} />
-        <Bg />
-      </Canvas>
+    <div className={styles.container}>
+      <h2 className={styles.title}>Sign In</h2>
 
-      {/* Login Container */}
-      <div className={styles.container}>
-        <h2 className={styles.title}>Sign In</h2>
+      {message && <p className={styles.message}>{message}</p>}
 
-        {message && <div className={styles.message}>{message}</div>}
+      <form onSubmit={handleEmailLogin} className={styles.form}>
+        <input type="email" placeholder="Email" required value={email} onChange={e => setEmail(e.target.value)} />
+        <input type="password" placeholder="Password" required value={password} onChange={e => setPassword(e.target.value)} />
+        <button type="submit" className={styles.btn}>Sign In</button>
+      </form>
 
-        <form onSubmit={handleLogin} className={styles.form}>
-          <input
-            type="email"
-            placeholder="Email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button type="submit" className={styles.btn}>
-            Sign In
-          </button>
-          <button type="button" className={styles.reset} onClick={() => alert("Reset password logic")}>
-            Forgot password?
-          </button>
+      <p style={{ textAlign: "center", margin: "10px 0" }}>or</p>
 
-          {/* Google Login */}
-          <button type="button" className={styles.googleBtn} onClick={handleGoogleLogin}>
-            <Image src="/google.svg" width={20} height={20} alt="Google" />
-            <span>Continue with Google</span>
-          </button>
-        </form>
+      <button className={styles.googleBtn} onClick={handleGoogleLogin}>
+        <Image src="/google.svg" width={20} height={20} alt="Google" />
+        <span>Continue with Google</span>
+      </button>
 
-        <p style={{ textAlign: "center", marginTop: "15px" }}>
-          Nta konti ufite? <a href="/register">Iyandikishe hano</a>
-        </p>
-      </div>
+      <p style={{ textAlign: "center", marginTop: "15px" }}>
+        Nta konti? <a href="/register">Iyandikishe hano</a>
+      </p>
 
-      {/* Loading overlay */}
-      {loading && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.spinner}></div>
-          <p>Tegereza gato...</p>
-        </div>
-      )}
+      {loading && <p className={styles.loading}>Tegereza gato...</p>}
     </div>
   );
-};
-
-export default Login;
+}
