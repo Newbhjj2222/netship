@@ -1,0 +1,77 @@
+.container {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.book {
+  max-width: 800px;
+  width: 100%;
+  background: var(--color-background);
+  padding: 20px;
+  border-radius: 12px;
+
+  /* 3D effect */
+  transform: perspective(1000px) rotateY(0deg);
+  transition: transform 0.6s ease;
+}
+
+.book:hover {
+  transform: perspective(1000px) rotateY(2deg);
+}
+
+.story {
+  margin-top: 15px;
+  line-height: 1.7;
+}
+
+/* ACTIONS */
+.actions {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions button {
+  padding: 8px 12px;
+  border: none;
+  background: #008489;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* COMMENTS */
+.comments {
+  margin-top: 30px;
+}
+
+.commentBox {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.commentBox input {
+  flex: 1;
+  padding: 8px;
+}
+
+.comment {
+  background: rgba(0,0,0,0.05);
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 5px;
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .book {
+    padding: 15px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+}
