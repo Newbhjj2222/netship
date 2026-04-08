@@ -41,26 +41,21 @@ export async function getServerSideProps({ req, params }) {
 
   // ===== CHECK MEMBERSHIP =====
   const memberSnap = await getDoc(doc(db, "members", uid));
+  let membershipMessage = "";
+  let isMember = false;
+
   if (!memberSnap.exists()) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  }
+    membershipMessage = "Nta membership yawe irabonetse. Twandikire kuri WhatsApp niba wifuza ubufasha: +250722319367";
+  } else {
+    const memberData = memberSnap.data();
+    const expiresAt = memberData.subscriptionExpiresAt?.toDate?.() || new Date(0);
 
-  const memberData = memberSnap.data();
-  // Convert Firestore Timestamp to Date
-  const expiresAt = memberData.subscriptionExpiresAt?.toDate?.() || new Date(0);
-
-  if (!memberData.isMember || expiresAt < new Date()) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
+    if (!memberData.isMember || expiresAt < new Date()) {
+      membershipMessage = "Membership yawe yararangiye. Kugira ngo usome iyi nkuru, saba indi.";
+    } else {
+      isMember = true;
+      membershipMessage = "Murakaza neza! Ufite membership yemewe.";
+    }
   }
 
   // ===== GET POST =====
@@ -96,11 +91,11 @@ export async function getServerSideProps({ req, params }) {
   const comments = commentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
   return {
-    props: { post, seriesPosts, currentIndex, comments, username },
+    props: { post, seriesPosts, currentIndex, comments, username, isMember, membershipMessage },
   };
 }
 
-export default function ReadPage({ post, seriesPosts, currentIndex, comments, username }) {
+export default function ReadPage({ post, seriesPosts, currentIndex, comments, username, isMember, membershipMessage }) {
   const next = seriesPosts[currentIndex + 1];
   const prev = seriesPosts[currentIndex - 1];
 
@@ -139,6 +134,10 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
 
   return (
     <div className={styles.container}>
+      <div className={styles.membershipMessage}>
+        {membershipMessage}
+      </div>
+
       <div className={styles.book}>
         <h1 className={styles.title}>{post.head}</h1>
 
@@ -146,23 +145,29 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
         {post.image && <img src={post.image} alt="Episode Image" className={styles.episodeImage} />}
 
         {/* Story */}
-        <div className={styles.story} dangerouslySetInnerHTML={{ __html: post.story }} />
+        {isMember ? (
+          <div className={styles.story} dangerouslySetInnerHTML={{ __html: post.story }} />
+        ) : (
+          <p className={styles.restricted}>Inkuru igenewe abanyamuryango gusa.</p>
+        )}
 
         {/* Actions */}
-        <div className={styles.actions}>
-          {prev && <Link href={`/post/${prev.id}`} className={styles.btn}>← Prev</Link>}
-          {next && <Link href={`/post/${next.id}`} className={styles.btn}>Next →</Link>}
-          <button onClick={handleCopy} className={styles.iconBtn}><FaCopy /> Copy</button>
-          <button onClick={shareWhatsApp} className={styles.iconBtn}><FaWhatsapp /> WhatsApp</button>
-          <button onClick={shareFacebook} className={styles.iconBtn}><FaFacebook /> Facebook</button>
-        </div>
+        {isMember && (
+          <div className={styles.actions}>
+            {prev && <Link href={`/post/${prev.id}`} className={styles.btn}>← Prev</Link>}
+            {next && <Link href={`/post/${next.id}`} className={styles.btn}>Next →</Link>}
+            <button onClick={handleCopy} className={styles.iconBtn}><FaCopy /> Copy</button>
+            <button onClick={shareWhatsApp} className={styles.iconBtn}><FaWhatsapp /> WhatsApp</button>
+            <button onClick={shareFacebook} className={styles.iconBtn}><FaFacebook /> Facebook</button>
+          </div>
+        )}
 
         {/* Comments */}
         <div className={styles.commentsSection}>
           <h3>Comments</h3>
           <form onSubmit={handleComment} className={styles.commentBox}>
-            <input name="comment" placeholder="Write comment..." />
-            <button type="submit">Send</button>
+            <input name="comment" placeholder="Write comment..." disabled={!isMember} />
+            <button type="submit" disabled={!isMember}>Send</button>
           </form>
           <div className={styles.commentList}>
             {comments.map((c) => (
