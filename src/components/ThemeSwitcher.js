@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 import { FaPaintBrush, FaFont } from "react-icons/fa";
 
 export default function ThemeSwitcher() {
@@ -8,8 +9,20 @@ export default function ThemeSwitcher() {
   const [color, setColor] = useState('black');
   const [font, setFont] = useState('sans');
 
-  // AUTO APPLY (nta button)
+  // ===== LOAD FROM COOKIES =====
   useEffect(() => {
+    const savedBg = Cookies.get("bg");
+    const savedColor = Cookies.get("color");
+    const savedFont = Cookies.get("font");
+
+    if (savedBg) setBg(savedBg);
+    if (savedColor) setColor(savedColor);
+    if (savedFont) setFont(savedFont);
+  }, []);
+
+  // ===== APPLY + SAVE =====
+  useEffect(() => {
+    // Apply theme
     document.body.style.backgroundColor = bg;
     document.body.style.color = color;
     document.body.style.fontFamily =
@@ -18,6 +31,12 @@ export default function ThemeSwitcher() {
         : font === 'mono'
         ? 'Courier New, monospace'
         : 'Georgia, serif';
+
+    // Save to cookies (7 days)
+    Cookies.set("bg", bg, { expires: 7, path: "/" });
+    Cookies.set("color", color, { expires: 7, path: "/" });
+    Cookies.set("font", font, { expires: 7, path: "/" });
+
   }, [bg, color, font]);
 
   return (
