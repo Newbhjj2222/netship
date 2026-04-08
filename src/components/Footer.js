@@ -27,7 +27,7 @@ export default function Footer() {
         <span>Home</span>
       </Link>
 
-      <Link href="/settings" className="item">
+      <Link href="/profile" className="item">
         <FiSettings />
         <span>Settings</span>
       </Link>
@@ -37,7 +37,7 @@ export default function Footer() {
         <span>WhatsApp</span>
       </button>
 
-      <Link href="/membership" className="item">
+      <Link href="/member" className="item">
         <FiAward />
         <span>Membership</span>
       </Link>
