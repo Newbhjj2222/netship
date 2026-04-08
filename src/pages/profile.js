@@ -2,76 +2,92 @@
 import { db } from "../components/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import cookie from "cookie";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
-import { FaSignOutAlt, FaUser, FaIdBadge } from "react-icons/fa";
-import styles from "./profile.module.css";
+import { FiLogOut, FiUser, FiAward } from "react-icons/fi";
+import styles from "../styles/profile.module.css";
 
 export async function getServerSideProps({ req }) {
+  // 🔹 Parse cookies
   const cookies = cookie.parse(req.headers.cookie || "");
   const userCookie = cookies.user ? JSON.parse(cookies.user) : null;
 
   if (!userCookie) {
     return {
-      redirect: { destination: "/login", permanent: false },
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
     };
   }
 
   const uid = userCookie.uid;
+  const username = userCookie.username || null;
+  const email = userCookie.email || null;
 
-  // Get membership info
+  // 🔹 Check membership
   const memberSnap = await getDoc(doc(db, "members", uid));
-  const memberData = memberSnap.exists() ? memberSnap.data() : null;
+  const isMember = memberSnap.exists() && memberSnap.data().isMember;
 
   return {
     props: {
-      user: userCookie,
-      memberData: memberData || null,
+      uid,
+      username,
+      email,
+      isMember,
     },
   };
 }
 
-export default function ProfilePage({ user, memberData }) {
+export default function ProfilePage({ uid, username, email, isMember }) {
   const router = useRouter();
+  const [theme, setTheme] = useState("light");
+
+  // 🔹 Apply theme to body safely
+  useEffect(() => {
+    document.body.dataset.theme = theme;
+  }, [theme]);
 
   const handleLogout = () => {
     Cookies.remove("user");
     router.replace("/login");
   };
 
-  const isMember =
-    memberData && memberData.isMember && memberData.subscriptionExpiresAt
-      ? new Date(memberData.subscriptionExpiresAt.toDate()) > new Date()
-      : false;
-
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
+      <div className={styles.profileCard}>
         <div className={styles.header}>
-          <FaUser size={40} />
-          <h2>{user.username}</h2>
-          {isMember && (
-            <span className={styles.badge}>
-              <FaIdBadge /> Member
-            </span>
-          )}
+          <FiUser size={30} />
+          <h2>{username || "User"}</h2>
         </div>
 
         <div className={styles.info}>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>UID:</strong> {user.uid}</p>
-          {memberData && memberData.subscriptionExpiresAt && (
-            <p>
-              <strong>Membership expires:</strong>{" "}
-              {new Date(memberData.subscriptionExpiresAt.toDate()).toLocaleDateString()}
-            </p>
-          )}
+          <p><strong>Email:</strong> {email}</p>
+          <p>
+            <strong>Membership:</strong>{" "}
+            {isMember ? (
+              <span className={styles.badge}>
+                <FiAward /> Active
+              </span>
+            ) : (
+              "Inactive"
+            )}
+          </p>
         </div>
 
-        <button onClick={handleLogout} className={styles.logoutBtn}>
-          <FaSignOutAlt /> Logout
-        </button>
+        <div className={styles.buttons}>
+          <button onClick={handleLogout} className={styles.logoutBtn}>
+            <FiLogOut /> Logout
+          </button>
+
+          <button
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            className={styles.themeBtn}
+          >
+            Switch to {theme === "light" ? "Dark" : "Light"} Mode
+          </button>
+        </div>
       </div>
     </div>
   );
