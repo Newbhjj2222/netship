@@ -59,8 +59,9 @@ export default function ProfilePage({ user }) {
           <FiLogOut /> Logout
         </button>
       </div>
-    </div>
     <ThemeSwitcher />
+    </div>
+    
     </>
   );
 }
