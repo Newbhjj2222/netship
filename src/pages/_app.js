@@ -1,5 +1,29 @@
+// pages/_app.js
 import "@/styles/globals.css";
+import { useEffect } from "react";
+import Cookies from "js-cookie";
 
 export default function App({ Component, pageProps }) {
+
+  useEffect(() => {
+    // 🔥 GET THEME FROM COOKIES
+    const bg = Cookies.get("bg") || "#ffffff";
+    const color = Cookies.get("color") || "#000000";
+    const font = Cookies.get("font") || "sans";
+
+    // 🔥 APPLY CSS VARIABLES (IMPORTANT)
+    document.documentElement.style.setProperty("--background", bg);
+    document.documentElement.style.setProperty("--foreground", color);
+
+    // 🔥 APPLY FONT
+    document.body.style.fontFamily =
+      font === "sans"
+        ? "Arial, Helvetica, sans-serif"
+        : font === "mono"
+        ? "Courier New, monospace"
+        : "Georgia, serif";
+
+  }, []);
+
   return <Component {...pageProps} />;
 }
