@@ -1,3 +1,4 @@
+/* 3D BACKGROUND */
 .canvasBg {
   position: fixed;
   top: 0;
@@ -7,7 +8,7 @@
   z-index: 0;
 }
 
-/* MAIN */
+/* MAIN CONTAINER */
 .container {
   position: relative;
   z-index: 2;
@@ -17,7 +18,10 @@
   padding: 20px;
 
   background: var(--color-background);
+  color: var(--color-foreground);
+
   border-radius: 12px;
+  backdrop-filter: blur(10px);
 
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
@@ -32,31 +36,37 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .form input {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
+  background: transparent;
+  color: inherit;
 }
 
-/* BUTTONS */
+/* BUTTON */
 .btn {
   padding: 10px;
   background: #008489;
   color: white;
   border: none;
   border-radius: 8px;
+  cursor: pointer;
 }
 
+/* RESET */
 .reset {
   background: none;
   border: none;
-  color: #008489;
   font-size: 12px;
+  color: #008489;
+  cursor: pointer;
 }
 
+/* GOOGLE BUTTON (AUTO DARK/LIGHT) */
 .googleBtn {
   display: flex;
   align-items: center;
@@ -66,19 +76,36 @@
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
-  background: white;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+/* LIGHT MODE */
+@media (prefers-color-scheme: light) {
+  .googleBtn {
+    background: #ffffff;
+    color: #000;
+  }
+}
+
+/* DARK MODE */
+@media (prefers-color-scheme: dark) {
+  .googleBtn {
+    background: #1f1f1f;
+    color: #fff;
+    border: 1px solid #444;
+  }
+}
+
+.googleBtn:hover {
+  transform: scale(1.03);
 }
 
 /* MESSAGE */
 .message {
-  color: red;
   margin-bottom: 10px;
-}
-
-/* LINK */
-.link {
-  margin-top: 10px;
-  text-align: center;
+  color: red;
 }
 
 /* LOADER */
