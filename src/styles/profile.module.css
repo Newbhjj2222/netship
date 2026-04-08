@@ -1,0 +1,95 @@
+/* styles/profile.module.css */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 10px;
+  background-color: var(--bg-color);
+  transition: background-color 0.3s;
+}
+
+.profileCard {
+  background-color: var(--card-bg);
+  padding: 25px;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.info p {
+  margin: 8px 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #00b894;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.logoutBtn, .themeBtn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.logoutBtn {
+  background-color: #d63031;
+  color: #fff;
+}
+
+.logoutBtn:hover {
+  background-color: #e17055;
+}
+
+.themeBtn {
+  background-color: #0984e3;
+  color: #fff;
+}
+
+.themeBtn:hover {
+  background-color: #74b9ff;
+}
+
+/* Dark / Light mode variables */
+:root[data-theme="light"] {
+  --bg-color: #f5f6fa;
+  --card-bg: #fff;
+  --text-color: #2d3436;
+}
+
+:root[data-theme="dark"] {
+  --bg-color: #2d3436;
+  --card-bg: #353b48;
+  --text-color: #dfe6e9;
+}
