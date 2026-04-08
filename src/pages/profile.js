@@ -1,18 +1,17 @@
-// pages/profile.js
 import { db } from "../components/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import cookie from "cookie";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { FiLogOut, FiUser, FiAward } from "react-icons/fi";
 import styles from "../styles/profile.module.css";
 
+// ===== SSR =====
 export async function getServerSideProps({ req }) {
-  // 🔹 Parse cookies
   const cookies = cookie.parse(req.headers.cookie || "");
   const userCookie = cookies.user ? JSON.parse(cookies.user) : null;
 
+  // ❌ Ntari login
   if (!userCookie) {
     return {
       redirect: {
@@ -22,17 +21,35 @@ export async function getServerSideProps({ req }) {
     };
   }
 
-  const uid = userCookie.uid;
   const username = userCookie.username || null;
   const email = userCookie.email || null;
 
-  // 🔹 Check membership
-  const memberSnap = await getDoc(doc(db, "members", uid));
-  const isMember = memberSnap.exists() && memberSnap.data().isMember;
+  // ===== CHECK MEMBERSHIP USING USERNAME =====
+  const q = query(
+    collection(db, "members"),
+    where("username", "==", username)
+  );
+
+  const snap = await getDocs(q);
+
+  let memberData = null;
+  snap.forEach((doc) => {
+    memberData = doc.data();
+  });
+
+  let isMember = false;
+
+  if (memberData) {
+    const expires =
+      memberData.subscriptionExpiresAt?.toDate?.() || new Date(0);
+
+    if (memberData.isMember && expires > new Date()) {
+      isMember = true;
+    }
+  }
 
   return {
     props: {
-      uid,
       username,
       email,
       isMember,
@@ -40,14 +57,9 @@ export async function getServerSideProps({ req }) {
   };
 }
 
-export default function ProfilePage({ uid, username, email, isMember }) {
+// ===== COMPONENT =====
+export default function ProfilePage({ username, email, isMember }) {
   const router = useRouter();
-  const [theme, setTheme] = useState("light");
-
-  // 🔹 Apply theme to body safely
-  useEffect(() => {
-    document.body.dataset.theme = theme;
-  }, [theme]);
 
   const handleLogout = () => {
     Cookies.remove("user");
@@ -57,13 +69,19 @@ export default function ProfilePage({ uid, username, email, isMember }) {
   return (
     <div className={styles.container}>
       <div className={styles.profileCard}>
+        
+        {/* HEADER */}
         <div className={styles.header}>
           <FiUser size={30} />
           <h2>{username || "User"}</h2>
         </div>
 
+        {/* INFO */}
         <div className={styles.info}>
-          <p><strong>Email:</strong> {email}</p>
+          <p>
+            <strong>Email:</strong> {email || "N/A"}
+          </p>
+
           <p>
             <strong>Membership:</strong>{" "}
             {isMember ? (
@@ -71,23 +89,20 @@ export default function ProfilePage({ uid, username, email, isMember }) {
                 <FiAward /> Active
               </span>
             ) : (
-              "Inactive"
+              <span className={styles.inactive}>
+                Not Active
+              </span>
             )}
           </p>
         </div>
 
+        {/* ACTION */}
         <div className={styles.buttons}>
           <button onClick={handleLogout} className={styles.logoutBtn}>
             <FiLogOut /> Logout
           </button>
-
-          <button
-            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            className={styles.themeBtn}
-          >
-            Switch to {theme === "light" ? "Dark" : "Light"} Mode
-          </button>
         </div>
+
       </div>
     </div>
   );
