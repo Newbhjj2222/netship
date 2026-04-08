@@ -4,6 +4,7 @@ import Cookies from "js-cookie";
 import cookie from "cookie";
 import { FiUser, FiMail, FiLogOut } from "react-icons/fi";
 import styles from "../styles/profile.module.css";
+import ThemeSwitcher from "../components/ThemeSwitcher";
 
 // ===== SSR =====
 export async function getServerSideProps({ req }) {
@@ -40,6 +41,7 @@ export default function ProfilePage({ user }) {
   };
 
   return (
+    <>
     <div className={styles.container}>
       <div className={styles.profileCard}>
         <div className={styles.header}>
@@ -58,5 +60,7 @@ export default function ProfilePage({ user }) {
         </button>
       </div>
     </div>
+    <ThemeSwitcher />
+    </>
   );
 }
