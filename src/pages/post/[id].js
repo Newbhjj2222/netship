@@ -1,3 +1,4 @@
+// pages/post/[id].js
 import { db } from "../../components/firebase";
 import {
   doc,
@@ -15,7 +16,7 @@ import Link from "next/link";
 import { FaWhatsapp, FaFacebook, FaCopy } from "react-icons/fa";
 import styles from "../../styles/read.module.css";
 
-// ===== PARSE =====
+// ===== PARSE HEAD =====
 function parseHead(head) {
   const match = head?.match(/^(.*)\sS(\d+)\s?EP\s?(\d+)/i);
   if (!match) return null;
@@ -40,59 +41,43 @@ export async function getServerSideProps({ req, params }) {
 
   const username = userCookie.username;
 
-  // ===== MEMBERSHIP =====
-  const q = query(
-    collection(db, "members"),
-    where("username", "==", username)
-  );
-
+  // ===== MEMBERSHIP CHECK =====
+  const q = query(collection(db, "members"), where("username", "==", username));
   const snapMembers = await getDocs(q);
-
-  let memberData = null;
-  snapMembers.forEach((d) => (memberData = d.data()));
 
   let isMember = false;
   let message = "";
 
-  if (!memberData) {
-    message =
-      "Nta membership ufite. Twandikire kuri WhatsApp: +250722319367";
-  } else {
-    const expires =
-      memberData.subscriptionExpiresAt?.toDate?.() || new Date(0);
-
-    if (!memberData.isMember || expires < new Date()) {
-      message = "Membership yawe yararangiye.";
-    } else {
+  snapMembers.forEach((d) => {
+    const data = d.data();
+    const expires = data.subscriptionExpiresAt?.toDate?.() || new Date(0);
+    if (data.isMember && expires > new Date()) {
       isMember = true;
+    } else {
+      message = "Membership yawe yararangiye cyangwa ntiyabonekaga.";
     }
-  }
+  });
 
   // ===== POST =====
   const postSnap = await getDoc(doc(db, "posts", id));
   if (!postSnap.exists()) return { notFound: true };
-
   const post = { id, ...postSnap.data() };
   const parsed = parseHead(post.head);
 
-  // ===== SERIES =====
+  // ===== SERIES POSTS =====
   let seriesPosts = [];
   let currentIndex = 0;
 
   if (parsed) {
-    const all = await getDocs(collection(db, "posts"));
-
-    seriesPosts = all.docs
+    const allSnap = await getDocs(collection(db, "posts"));
+    seriesPosts = allSnap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((p) => {
         const pParsed = parseHead(p.head);
         return pParsed && pParsed.title === parsed.title;
       })
       .map((p) => ({ ...p, ...parseHead(p.head) }))
-      .sort((a, b) => {
-        if (a.season === b.season) return a.episode - b.episode;
-        return a.season - b.season;
-      });
+      .sort((a, b) => (a.season === b.season ? a.episode - b.episode : a.season - b.season));
 
     currentIndex = seriesPosts.findIndex((p) => p.id === id);
   }
@@ -102,10 +87,7 @@ export async function getServerSideProps({ req, params }) {
     query(collection(db, "posts", id, "comments"), orderBy("createdAt", "desc"))
   );
 
-  const comments = commentsSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  const comments = commentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
   return {
     props: {
@@ -120,16 +102,8 @@ export async function getServerSideProps({ req, params }) {
   };
 }
 
-// ===== PAGE =====
-export default function ReadPage({
-  post,
-  seriesPosts,
-  currentIndex,
-  comments,
-  username,
-  isMember,
-  message,
-}) {
+// ===== COMPONENT =====
+export default function ReadPage({ post, seriesPosts, currentIndex, comments, username, isMember, message }) {
   const next = seriesPosts[currentIndex + 1];
   const prev = seriesPosts[currentIndex - 1];
 
@@ -157,20 +131,15 @@ export default function ReadPage({
     alert("Copied!");
   };
 
-  // ===== SHARE =====
   const link = `https://www.newtalentsg.co.rw/post/${post.id}`;
   const summary = post.story?.replace(/<[^>]+>/g, "").slice(0, 120);
 
-  const shareWhatsApp = () =>
-    window.open(`https://wa.me/?text=${encodeURIComponent(summary + " " + link)}`);
-
-  const shareFacebook = () =>
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${link}`);
+  const shareWhatsApp = () => window.open(`https://wa.me/?text=${encodeURIComponent(summary + " " + link)}`);
+  const shareFacebook = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${link}`);
 
   // ===== COMMENT =====
   const handleComment = async (e) => {
     e.preventDefault();
-
     if (!isMember) return;
 
     const text = e.target.comment.value.trim();
@@ -192,20 +161,13 @@ export default function ReadPage({
         <h1 className={styles.title}>{post.head}</h1>
 
         {/* IMAGE */}
-        {post.image && (
-          <img src={post.image} className={styles.image} />
-        )}
+        {post.image && <img src={post.image} className={styles.image} />}
 
         {/* STORY */}
         {isMember ? (
-          <div
-            className={styles.story}
-            dangerouslySetInnerHTML={{ __html: post.story }}
-          />
+          <div className={styles.story} dangerouslySetInnerHTML={{ __html: post.story }} />
         ) : (
-          <p className={styles.locked}>
-            Ugomba kuba member kugirango usome iyi nkuru.
-          </p>
+          <p className={styles.locked}>Ugomba kuba member kugirango usome iyi nkuru.</p>
         )}
 
         {/* ACTIONS */}
