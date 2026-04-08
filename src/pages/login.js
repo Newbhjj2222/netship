@@ -26,35 +26,44 @@ export default function LoginPage() {
   // ===== AUTO LOGIN =====
   useEffect(() => {
     const userCookie = Cookies.get("user");
-    if (userCookie) router.replace("/");
+    if (userCookie) {
+      router.replace("/");
+    }
   }, [router]);
 
   // ===== GET USER FROM FIRESTORE =====
   const getUserData = async (uid) => {
-    const ref = doc(db, "userdate", "data");
-    const snap = await getDoc(ref);
+    try {
+      const ref = doc(db, "userdate", "data");
+      const snap = await getDoc(ref);
 
-    if (!snap.exists()) return null;
+      if (!snap.exists()) return null;
 
-    const data = snap.data();
+      const data = snap.data();
 
-    if (!data[uid]) return null;
+      if (!data[uid]) return null;
 
-    return data[uid]; // contains fName, email, etc
+      return data[uid]; // contains fName, email, etc
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      return null;
+    }
   };
 
-  // ===== SAVE COOKIE =====
+  // ===== SAVE COOKIE (SAFE VERSION) =====
   const saveUserToCookie = (uid, firebaseUser, dbUser) => {
-    Cookies.set(
-      "user",
-      JSON.stringify({
-        uid,
-        email: firebaseUser.email,
-        username: dbUser?.fName || "User",
-        ...dbUser, // saves all other info too
-      }),
-      { expires: 7 }
-    );
+    const userData = {
+      uid,
+      email: firebaseUser.email,
+      username: dbUser?.fName || "User",
+    };
+
+    Cookies.set("user", JSON.stringify(userData), {
+      expires: 7,
+      path: "/", // 🔥 VERY IMPORTANT for SSR
+    });
+
+    console.log("COOKIE SAVED:", userData);
   };
 
   // ===== EMAIL LOGIN =====
@@ -78,7 +87,12 @@ export default function LoginPage() {
       saveUserToCookie(user.uid, user, dbUser);
 
       setMessage("Winjiye neza!");
-      router.replace("/");
+
+      // ⏳ WAIT kugirango cookie ibanze ibike
+      setTimeout(() => {
+        router.replace("/");
+      }, 500);
+
     } catch (err) {
       setMessage("Kwinjira ntibishobotse: " + err.message);
       setLoading(false);
@@ -105,7 +119,11 @@ export default function LoginPage() {
       saveUserToCookie(user.uid, user, dbUser);
 
       setMessage("Winjiye neza ukoresheje Google!");
-      router.replace("/");
+
+      setTimeout(() => {
+        router.replace("/");
+      }, 500);
+
     } catch (err) {
       setMessage("Google login ntibishobotse: " + err.message);
       setLoading(false);
