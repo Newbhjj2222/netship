@@ -1,11 +1,15 @@
-// pages/login.js
 'use client';
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider
+} from "firebase/auth";
+
 import { auth, db } from "../components/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import Cookies from "js-cookie";
 import Image from "next/image";
 import styles from "../styles/Login.module.css";
@@ -19,85 +23,91 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Auto redirect if user cookie exists
+  // ===== AUTO LOGIN =====
   useEffect(() => {
     const userCookie = Cookies.get("user");
-    if (userCookie) router.replace("/"); // user already logged in
+    if (userCookie) router.replace("/");
   }, [router]);
 
-  // ===== Email/Password Login =====
+  // ===== GET USER FROM FIRESTORE =====
+  const getUserData = async (uid) => {
+    const ref = doc(db, "userdate", "data");
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) return null;
+
+    const data = snap.data();
+
+    if (!data[uid]) return null;
+
+    return data[uid]; // contains fName, email, etc
+  };
+
+  // ===== SAVE COOKIE =====
+  const saveUserToCookie = (uid, firebaseUser, dbUser) => {
+    Cookies.set(
+      "user",
+      JSON.stringify({
+        uid,
+        email: firebaseUser.email,
+        username: dbUser?.fName || "User",
+        ...dbUser, // saves all other info too
+      }),
+      { expires: 7 }
+    );
+  };
+
+  // ===== EMAIL LOGIN =====
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const res = await signInWithEmailAndPassword(auth, email, password);
+      const user = res.user;
 
-      // Save cookie
-      Cookies.set("user", JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-        username: user.displayName || "User"
-      }), { expires: 7 });
+      const dbUser = await getUserData(user.uid);
 
-      // Ensure membership exists in Firestore
-      const memberRef = doc(db, "members", user.uid);
-      const memberSnap = await getDoc(memberRef);
-      if (!memberSnap.exists()) {
-        await setDoc(memberRef, {
-          uid: user.uid,
-          username: user.displayName || "User",
-          isMember: true,
-          subscriptionExpiresAt: new Date(Date.now() + 365*24*60*60*1000),
-          createdAt: serverTimestamp(),
-        });
+      if (!dbUser) {
+        setMessage("User ntaboneka muri database.");
+        setLoading(false);
+        return;
       }
+
+      saveUserToCookie(user.uid, user, dbUser);
 
       setMessage("Winjiye neza!");
       router.replace("/");
     } catch (err) {
       setMessage("Kwinjira ntibishobotse: " + err.message);
-    } finally {
       setLoading(false);
     }
   };
 
-  // ===== Google Login =====
+  // ===== GOOGLE LOGIN =====
   const handleGoogleLogin = async () => {
     setLoading(true);
     setMessage("");
 
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      const res = await signInWithPopup(auth, provider);
+      const user = res.user;
 
-      // Save cookie
-      Cookies.set("user", JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-        username: user.displayName || "User"
-      }), { expires: 7 });
+      const dbUser = await getUserData(user.uid);
 
-      // Ensure membership exists in Firestore
-      const memberRef = doc(db, "members", user.uid);
-      const memberSnap = await getDoc(memberRef);
-      if (!memberSnap.exists()) {
-        await setDoc(memberRef, {
-          uid: user.uid,
-          username: user.displayName || "User",
-          isMember: true,
-          subscriptionExpiresAt: new Date(Date.now() + 365*24*60*60*1000),
-          createdAt: serverTimestamp(),
-        });
+      if (!dbUser) {
+        setMessage("User wa Google ntabitswe muri database.");
+        setLoading(false);
+        return;
       }
+
+      saveUserToCookie(user.uid, user, dbUser);
 
       setMessage("Winjiye neza ukoresheje Google!");
       router.replace("/");
     } catch (err) {
       setMessage("Google login ntibishobotse: " + err.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -109,9 +119,25 @@ export default function LoginPage() {
       {message && <p className={styles.message}>{message}</p>}
 
       <form onSubmit={handleEmailLogin} className={styles.form}>
-        <input type="email" placeholder="Email" required value={email} onChange={e => setEmail(e.target.value)} />
-        <input type="password" placeholder="Password" required value={password} onChange={e => setPassword(e.target.value)} />
-        <button type="submit" className={styles.btn}>Sign In</button>
+        <input
+          type="email"
+          placeholder="Email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button type="submit" className={styles.btn}>
+          Sign In
+        </button>
       </form>
 
       <p style={{ textAlign: "center", margin: "10px 0" }}>or</p>
