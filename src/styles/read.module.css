@@ -36,6 +36,7 @@
 .btn {
   padding: 8px 12px;
   background: #ddd;
+  color: green;
   border-radius: 8px;
   text-decoration: none;
 }
