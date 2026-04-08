@@ -1,12 +1,14 @@
 // pages/member.js
+'use client';
+
 import { db } from "../components/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import cookie from "cookie";
 import { FaUser, FaUserTie, FaHandsHelping, FaWhatsapp } from "react-icons/fa";
 import styles from "../styles/member.module.css";
 
-// ===== SSR ONLY =====
 export async function getServerSideProps({ req }) {
+  // ===== PARSE COOKIES =====
   const cookies = req.headers.cookie ? req.headers.cookie : "";
   const parsedCookies = cookie.parse(cookies);
   const userCookie = parsedCookies.user ? JSON.parse(parsedCookies.user) : null;
@@ -40,34 +42,38 @@ export default function MemberPage({ username, roleData }) {
     window.open(url, "_blank");
   };
 
+  const checkStatus = (roleKey) => {
+    const data = roleData[roleKey];
+    if (!data) return { active: false };
+
+    if (roleKey === "member") {
+      if (!data.subscriptionExpiresAt) return { active: false };
+      const expires = data.subscriptionExpiresAt.toDate();
+      const now = new Date();
+      return { active: expires >= now, expires };
+    }
+
+    // Umujyanama cyangwa umuterankunga bameze active niba bari muri database
+    return { active: true };
+  };
+
   const roles = [
     {
       key: "member",
       label: "Membership",
-      icon: <FaUser />,
+      icon: <FaUser size={40} />,
     },
     {
       key: "umujyanama",
       label: "Umujyanama",
-      icon: <FaUserTie />,
+      icon: <FaUserTie size={40} />,
     },
     {
       key: "umuterankunga",
       label: "Umuterankunga",
-      icon: <FaHandsHelping />,
+      icon: <FaHandsHelping size={40} />,
     },
   ];
-
-  const checkStatus = (roleKey) => {
-    const data = roleData[roleKey];
-    if (!data) return { active: false };
-    if (roleKey === "member") {
-      const expires = data.subscriptionExpiresAt?.toDate?.() || new Date(0);
-      const now = new Date();
-      return { active: expires > now, expires };
-    }
-    return { active: true };
-  };
 
   return (
     <div className={styles.container}>
@@ -75,20 +81,23 @@ export default function MemberPage({ username, roleData }) {
 
       <div className={styles.cardsWrapper}>
         {roles.map((role) => {
-          const data = roleData[role.key];
           const status = checkStatus(role.key);
+          const data = roleData[role.key];
 
           return (
             <div key={role.key} className={styles.card}>
               <div className={styles.icon}>{role.icon}</div>
               <h2>{role.label}</h2>
 
-              <span className={`${styles.badge} ${status.active ? styles.active : styles.nonActive}`}>
+              <p className={status.active ? styles.activeBadge : styles.nonActiveBadge}>
                 {status.active ? "Active" : "Non-Active"}
-              </span>
+              </p>
 
-              {role.key === "member" && data && status.expires && (
-                <p>Igihe membership izarangirira: {status.expires.toLocaleDateString()}</p>
+              {/* Membership dates */}
+              {role.key === "member" && status.active && data && data.subscriptionExpiresAt && (
+                <p className={styles.dates}>
+                  Igihe izarangirira: {data.subscriptionExpiresAt.toDate().toLocaleDateString()}
+                </p>
               )}
 
               <button
