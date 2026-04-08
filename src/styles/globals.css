@@ -1,17 +1,14 @@
+/* Global styles */
 @import "tailwindcss";
 
+/* ===== Default Root Variables ===== */
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-main: Arial, Helvetica, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/* ===== Dark Mode ===== */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -19,8 +16,49 @@
   }
 }
 
+/* ===== Body Styles ===== */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-main);
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  user-select: none; /* disable text selection globally */
+  touch-action: pan-x pan-y; /* disable zoom gestures on mobile */
 }
+
+/* ===== Optional Global Overrides ===== */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* ===== Smooth Transitions ===== */
+body, * {
+  transition: background 0.3s ease, color 0.3s ease, font-family 0.3s ease;
+}
+
+/* ===== Utility Classes for Backgrounds ===== */
+.bg-white { --background: #ffffff; }
+.bg-black { --background: #0a0a0a; }
+.bg-blue { --background: #3b82f6; }
+.bg-green { --background: #22c55e; }
+.bg-yellow { --background: #eab308; }
+.bg-gray { --background: #6b7280; }
+
+/* ===== Utility Classes for Text Colors ===== */
+.text-white { --foreground: #ffffff; }
+.text-black { --foreground: #171717; }
+.text-blue { --foreground: #3b82f6; }
+.text-green { --foreground: #22c55e; }
+.text-yellow { --foreground: #eab308; }
+.text-gray { --foreground: #6b7280; }
+
+/* ===== Utility Classes for Fonts ===== */
+.font-sans { --font-main: 'Arial', Helvetica, sans-serif; }
+.font-mono { --font-main: 'Courier New', monospace; }
+.font-serif { --font-main: 'Georgia', serif; }
