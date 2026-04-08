@@ -63,7 +63,7 @@ export default function MemberPage({ username, roleData }) {
 
   return (
     <div className={styles.container}>
-      <h1>Profile ya {username}</h1>
+      
 
       <div className={styles.cardsWrapper}>
         {roles.map((role) => {
