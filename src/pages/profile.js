@@ -1,3 +1,4 @@
+// pages/profile.js
 import { db } from "../components/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import cookie from "cookie";
@@ -11,7 +12,7 @@ export async function getServerSideProps({ req }) {
   const cookies = cookie.parse(req.headers.cookie || "");
   const userCookie = cookies.user ? JSON.parse(cookies.user) : null;
 
-  // ❌ Ntari login
+  // ❌ Nta user
   if (!userCookie) {
     return {
       redirect: {
@@ -22,9 +23,8 @@ export async function getServerSideProps({ req }) {
   }
 
   const username = userCookie.username || null;
-  const email = userCookie.email || null;
 
-  // ===== CHECK MEMBERSHIP USING USERNAME =====
+  // ===== MEMBERSHIP CHECK (using username) =====
   const q = query(
     collection(db, "members"),
     where("username", "==", username)
@@ -38,27 +38,28 @@ export async function getServerSideProps({ req }) {
   });
 
   let isMember = false;
+  let expiresAt = null;
 
   if (memberData) {
-    const expires =
-      memberData.subscriptionExpiresAt?.toDate?.() || new Date(0);
+    expiresAt =
+      memberData.subscriptionExpiresAt?.toDate?.() || null;
 
-    if (memberData.isMember && expires > new Date()) {
+    if (memberData.isMember && expiresAt > new Date()) {
       isMember = true;
     }
   }
 
   return {
     props: {
-      username,
-      email,
+      user: userCookie, // 🔥 TWOHEREZA DATA YOSE
       isMember,
+      expiresAt: expiresAt ? expiresAt.toISOString() : null,
     },
   };
 }
 
 // ===== COMPONENT =====
-export default function ProfilePage({ username, email, isMember }) {
+export default function ProfilePage({ user, isMember, expiresAt }) {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -69,24 +70,42 @@ export default function ProfilePage({ username, email, isMember }) {
   return (
     <div className={styles.container}>
       <div className={styles.profileCard}>
-        
+
         {/* HEADER */}
         <div className={styles.header}>
           <FiUser size={30} />
-          <h2>{username || "User"}</h2>
+          <h2>
+            {user.username || "User"}
+            {isMember && (
+              <span className={styles.badge}>
+                <FiAward /> Member
+              </span>
+            )}
+          </h2>
         </div>
 
-        {/* INFO */}
+        {/* USER INFO */}
         <div className={styles.info}>
-          <p>
-            <strong>Email:</strong> {email || "N/A"}
-          </p>
+          <p><strong>UID:</strong> {user.uid}</p>
+          <p><strong>Email:</strong> {user.email}</p>
+          <p><strong>Username:</strong> {user.username}</p>
+
+          {/* 🔥 SHOW ALL EXTRA DATA */}
+          {Object.keys(user).map((key) => {
+            if (["uid", "email", "username"].includes(key)) return null;
+
+            return (
+              <p key={key}>
+                <strong>{key}:</strong> {String(user[key])}
+              </p>
+            );
+          })}
 
           <p>
             <strong>Membership:</strong>{" "}
             {isMember ? (
               <span className={styles.badge}>
-                <FiAward /> Active
+                Active
               </span>
             ) : (
               <span className={styles.inactive}>
@@ -94,6 +113,13 @@ export default function ProfilePage({ username, email, isMember }) {
               </span>
             )}
           </p>
+
+          {expiresAt && (
+            <p>
+              <strong>Expires At:</strong>{" "}
+              {new Date(expiresAt).toLocaleString()}
+            </p>
+          )}
         </div>
 
         {/* ACTION */}
