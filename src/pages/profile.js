@@ -42,6 +42,7 @@ export default function ProfilePage({ user }) {
 
   return (
     <>
+    <ThemeSwitcher />
     <div className={styles.container}>
       <div className={styles.profileCard}>
         <div className={styles.header}>
@@ -59,7 +60,7 @@ export default function ProfilePage({ user }) {
           <FiLogOut /> Logout
         </button>
       </div>
-    <ThemeSwitcher />
+    
     </div>
     
     </>
