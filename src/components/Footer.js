@@ -14,7 +14,7 @@ export default function Footer() {
 
   const goWhatsApp = () => {
     const number = "250722319367";
-    const message = "Muraho, ndifuza membership.";
+    const message = "Muraho, ndifuza ubufasha kubijyanye na membership.";
     const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
@@ -22,14 +22,9 @@ export default function Footer() {
   return (
     <div className="footer">
 
-      <Link href="/" className="item">
+      <Link href="/" className="item home">
         <FiHome />
         <span>Home</span>
-      </Link>
-
-      <Link href="/profile" className="item">
-        <FiSettings />
-        <span>Settings</span>
       </Link>
 
       <button className="item" onClick={goWhatsApp}>
@@ -42,6 +37,11 @@ export default function Footer() {
         <span>Membership</span>
       </Link>
 
+      <Link href="/profile" className="item settings">
+        <FiSettings />
+        <span>Settings</span>
+      </Link>
+
       <style jsx>{`
         .footer {
           position: fixed;
@@ -52,9 +52,9 @@ export default function Footer() {
           color: var(--foreground);
           border-top: 1px solid rgba(0,0,0,0.1);
           display: flex;
-          justify-content: space-around;
+          justify-content: space-between;
           align-items: center;
-          padding: 0.5rem 0;
+          padding: 0.5rem 1rem;
           z-index: 1000;
         }
 
@@ -65,36 +65,50 @@ export default function Footer() {
           gap: 2px;
           font-size: 0.7rem;
           color: var(--foreground);
-          text-decoration: none;
           background: none;
           border: none;
           cursor: pointer;
           transition: all 0.2s ease;
+          position: relative;
+        }
+
+        /* Hide labels initially */
+        .item span {
+          display: none;
+          position: absolute;
+          bottom: 100%;
+          background: var(--foreground);
+          color: var(--background);
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 0.6rem;
+          white-space: nowrap;
+          margin-bottom: 4px;
+        }
+
+        /* Show label on hover */
+        .item:hover span {
+          display: block;
         }
 
         .item svg {
-          font-size: 1.2rem;
+          font-size: 1.4rem;
         }
 
-        .item:hover {
-          opacity: 0.7;
-          transform: translateY(-2px);
-        }
+        /* Space items: home first, settings last, others centered */
+        .home { order: 0; }
+        .item:nth-of-type(2) { order: 1; }
+        .item:nth-of-type(3) { order: 2; }
+        .settings { order: 3; }
 
-        /* Prevent content from being hidden behind footer */
+        /* Prevent content hidden behind footer */
         :global(body) {
           padding-bottom: 60px;
         }
 
         /* Responsive */
         @media (max-width: 480px) {
-          .item {
-            font-size: 0.65rem;
-          }
-
-          .item svg {
-            font-size: 1rem;
-          }
+          .item svg { font-size: 1.2rem; }
         }
       `}</style>
     </div>
