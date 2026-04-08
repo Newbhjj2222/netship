@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/router";
-import {
-  FiHome,
-  FiSettings,
-  FiMessageCircle,
-  FiAward
-} from "react-icons/fi";
+import { FiHome, FiSettings, FiMessageCircle, FiAward } from "react-icons/fi";
 
 export default function Footer() {
   const router = useRouter();
@@ -52,9 +47,9 @@ export default function Footer() {
           color: var(--foreground);
           border-top: 1px solid rgba(0,0,0,0.1);
           display: flex;
-          justify-content: space-between;
+          justify-content: space-around;
           align-items: center;
-          padding: 0.5rem 1rem;
+          padding: 0.5rem 0;
           z-index: 1000;
         }
 
@@ -62,37 +57,25 @@ export default function Footer() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 2px;
-          font-size: 0.7rem;
+          gap: 0.25rem;
+          font-size: 0.75rem;
           color: var(--foreground);
           background: none;
           border: none;
           cursor: pointer;
           transition: all 0.2s ease;
-          position: relative;
-        }
-
-        /* Hide labels initially */
-        .item span {
-          display: none;
-          position: absolute;
-          bottom: 100%;
-          background: var(--foreground);
-          color: var(--background);
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 0.6rem;
-          white-space: nowrap;
-          margin-bottom: 4px;
-        }
-
-        /* Show label on hover */
-        .item:hover span {
-          display: block;
         }
 
         .item svg {
-          font-size: 1.4rem;
+          font-size: 2rem; /* icon nini */
+        }
+
+        .item span {
+          font-size: 0.75rem;
+        }
+
+        .item:hover svg {
+          transform: scale(1.2);
         }
 
         /* Space items: home first, settings last, others centered */
@@ -103,12 +86,21 @@ export default function Footer() {
 
         /* Prevent content hidden behind footer */
         :global(body) {
-          padding-bottom: 60px;
+          padding-bottom: 70px;
         }
 
-        /* Responsive */
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          .item svg { font-size: 1.8rem; }
+          .item span { font-size: 0.7rem; }
+        }
+
         @media (max-width: 480px) {
-          .item svg { font-size: 1.2rem; }
+          .footer {
+            padding: 0.5rem 0.2rem;
+          }
+          .item svg { font-size: 1.5rem; }
+          .item span { font-size: 0.65rem; }
         }
       `}</style>
     </div>
