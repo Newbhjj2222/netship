@@ -20,11 +20,12 @@ export default function ThemeSwitcher() {
     if (savedFont) setFont(savedFont);
   }, []);
 
-  // ===== APPLY + SAVE =====
+  // ===== APPLY THEME CORRECTLY =====
   useEffect(() => {
-    // Apply theme
-    document.body.style.backgroundColor = bg;
-    document.body.style.color = color;
+    // 🎯 THIS IS THE REAL FIX
+    document.documentElement.style.setProperty('--background', bg);
+    document.documentElement.style.setProperty('--foreground', color);
+
     document.body.style.fontFamily =
       font === 'sans'
         ? 'Arial, Helvetica, sans-serif'
@@ -32,7 +33,7 @@ export default function ThemeSwitcher() {
         ? 'Courier New, monospace'
         : 'Georgia, serif';
 
-    // Save to cookies (7 days)
+    // SAVE
     Cookies.set("bg", bg, { expires: 7, path: "/" });
     Cookies.set("color", color, { expires: 7, path: "/" });
     Cookies.set("font", font, { expires: 7, path: "/" });
@@ -41,26 +42,25 @@ export default function ThemeSwitcher() {
 
   return (
     <div className="theme-switcher">
-
       <div className="row">
         <FaPaintBrush />
 
         <select value={bg} onChange={(e) => setBg(e.target.value)}>
-          <option value="white">White</option>
-          <option value="black">Black</option>
-          <option value="blue">Blue</option>
-          <option value="green">Green</option>
-          <option value="yellow">Yellow</option>
-          <option value="gray">Gray</option>
+          <option value="#ffffff">White</option>
+          <option value="#000000">Black</option>
+          <option value="#1e3a8a">Blue</option>
+          <option value="#065f46">Green</option>
+          <option value="#facc15">Yellow</option>
+          <option value="#6b7280">Gray</option>
         </select>
 
         <select value={color} onChange={(e) => setColor(e.target.value)}>
-          <option value="black">Text Black</option>
-          <option value="white">Text White</option>
-          <option value="blue">Text Blue</option>
-          <option value="green">Text Green</option>
-          <option value="yellow">Text Yellow</option>
-          <option value="gray">Text Gray</option>
+          <option value="#000000">Text Black</option>
+          <option value="#ffffff">Text White</option>
+          <option value="#2563eb">Text Blue</option>
+          <option value="#16a34a">Text Green</option>
+          <option value="#eab308">Text Yellow</option>
+          <option value="#6b7280">Text Gray</option>
         </select>
 
         <FaFont />
@@ -75,45 +75,41 @@ export default function ThemeSwitcher() {
       <style jsx>{`
         .theme-switcher {
           width: 100%;
-          padding: 0.5rem;
           display: flex;
           justify-content: center;
-          user-select: none;
+          padding: 0.5rem;
         }
 
         .row {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          background: #f3f4f6;
-          padding: 0.5rem 0.75rem;
+          gap: 0.4rem;
+          background: var(--background);
+          color: var(--foreground);
+          padding: 0.4rem 0.6rem;
           border-radius: 999px;
           box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+          border: 1px solid rgba(0,0,0,0.1);
           flex-wrap: wrap;
         }
 
         select {
-          padding: 0.3rem 0.5rem;
+          padding: 0.25rem 0.4rem;
           border-radius: 6px;
-          border: 1px solid #ccc;
-          font-size: 0.9rem;
-          cursor: pointer;
-          background: white;
+          border: 1px solid rgba(0,0,0,0.2);
+          font-size: 0.8rem;
+          background: var(--background);
+          color: var(--foreground);
         }
 
         svg {
-          font-size: 1rem;
+          font-size: 0.9rem;
         }
 
         @media (max-width: 600px) {
           .row {
             gap: 0.3rem;
-            padding: 0.4rem;
-          }
-
-          select {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.4rem;
+            padding: 0.3rem;
           }
         }
 
