@@ -15,7 +15,7 @@ import Link from "next/link";
 import { FaWhatsapp, FaFacebook, FaCopy } from "react-icons/fa";
 import styles from "../../styles/read.module.css";
 
-// ===== PARSE HEAD =====
+// ===== PARSE =====
 function parseHead(head) {
   const match = head?.match(/^(.*)\sS(\d+)\s?EP\s?(\d+)/i);
   if (!match) return null;
@@ -30,55 +30,49 @@ function parseHead(head) {
 export async function getServerSideProps({ req, params }) {
   const { id } = params;
 
-  // ===== GET COOKIE =====
+  // ===== COOKIE =====
   const cookies = cookie.parse(req.headers.cookie || "");
   const userCookie = cookies.user ? JSON.parse(cookies.user) : null;
 
   if (!userCookie) {
-    return {
-      redirect: { destination: "/login", permanent: false },
-    };
+    return { redirect: { destination: "/login", permanent: false } };
   }
 
   const username = userCookie.username;
 
-  // ===== FIND MEMBER BY USERNAME (FAST QUERY) =====
+  // ===== MEMBERSHIP =====
   const q = query(
     collection(db, "members"),
     where("username", "==", username)
   );
 
-  const querySnap = await getDocs(q);
+  const snapMembers = await getDocs(q);
 
   let memberData = null;
-  querySnap.forEach((doc) => {
-    memberData = doc.data();
-  });
+  snapMembers.forEach((d) => (memberData = d.data()));
 
   let isMember = false;
-  let membershipMessage = "";
+  let message = "";
 
   if (!memberData) {
-    membershipMessage =
-      "Musomyi, nta membership ya New Talents Stories Group wahawe. Twandikire kuri WhatsApp: +250722319367.";
+    message =
+      "Nta membership ufite. Twandikire kuri WhatsApp: +250722319367";
   } else {
-    const expiresAt =
+    const expires =
       memberData.subscriptionExpiresAt?.toDate?.() || new Date(0);
 
-    if (!memberData.isMember || expiresAt < new Date()) {
-      membershipMessage =
-        "Musomyi wacu, membership yawe yararangiye. Kugira ngo usome, saba indi.";
+    if (!memberData.isMember || expires < new Date()) {
+      message = "Membership yawe yararangiye.";
     } else {
       isMember = true;
-      membershipMessage = "Murakaza neza! Uri umunyamuryango wemewe.";
     }
   }
 
-  // ===== GET POST =====
-  const snap = await getDoc(doc(db, "posts", id));
-  if (!snap.exists()) return { notFound: true };
+  // ===== POST =====
+  const postSnap = await getDoc(doc(db, "posts", id));
+  if (!postSnap.exists()) return { notFound: true };
 
-  const post = { id, ...snap.data() };
+  const post = { id, ...postSnap.data() };
   const parsed = parseHead(post.head);
 
   // ===== SERIES =====
@@ -121,7 +115,7 @@ export async function getServerSideProps({ req, params }) {
       comments,
       username,
       isMember,
-      membershipMessage,
+      message,
     },
   };
 }
@@ -134,37 +128,46 @@ export default function ReadPage({
   comments,
   username,
   isMember,
-  membershipMessage,
+  message,
 }) {
   const next = seriesPosts[currentIndex + 1];
   const prev = seriesPosts[currentIndex - 1];
 
-  // ===== COPY CLEAN TEXT =====
+  // ===== AUTO RESUME =====
+  const saveProgress = () => {
+    const key = post.head?.split(" S")[0];
+    document.cookie = `last_${key}=${post.id}; path=/`;
+  };
+
+  // ===== ALERT =====
+  if (!isMember && typeof window !== "undefined") {
+    setTimeout(() => alert(message), 500);
+  }
+
+  // ===== COPY =====
   const handleCopy = () => {
     const text = post.story
       ?.replace(/<[^>]+>/g, "")
       .split("\n")
       .map((p) => p.trim())
       .filter((p) => p.length)
-      .join("\n\n") || "";
+      .join("\n\n");
 
     navigator.clipboard.writeText(text);
-    alert("Episode copied!");
+    alert("Copied!");
   };
 
+  // ===== SHARE =====
   const link = `https://www.newtalentsg.co.rw/post/${post.id}`;
   const summary = post.story?.replace(/<[^>]+>/g, "").slice(0, 120);
 
   const shareWhatsApp = () =>
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(summary + " " + link)}`
-    );
+    window.open(`https://wa.me/?text=${encodeURIComponent(summary + " " + link)}`);
 
   const shareFacebook = () =>
-    window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${link}`
-    );
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${link}`);
 
+  // ===== COMMENT =====
   const handleComment = async (e) => {
     e.preventDefault();
 
@@ -180,32 +183,17 @@ export default function ReadPage({
     });
 
     e.target.reset();
-    window.location.reload();
+    location.reload();
   };
 
   return (
-    <div className={styles.container}>
-      
-      {/* MESSAGE */}
-      <div className={styles.membershipMessage}>
-        {membershipMessage}
-      </div>
-
+    <div className={styles.container} onLoad={saveProgress}>
       <div className={styles.book}>
-        <h1 className={styles.title}>
-          {post.head}
-          {isMember && (
-            <span className={styles.badge}> ✔ Member</span>
-          )}
-        </h1>
+        <h1 className={styles.title}>{post.head}</h1>
 
         {/* IMAGE */}
         {post.image && (
-          <img
-            src={post.image}
-            alt="Episode"
-            className={styles.episodeImage}
-          />
+          <img src={post.image} className={styles.image} />
         )}
 
         {/* STORY */}
@@ -215,62 +203,45 @@ export default function ReadPage({
             dangerouslySetInnerHTML={{ __html: post.story }}
           />
         ) : (
-          <p className={styles.restricted}>
-            Iyi nkuru igenewe abanyamuryango gusa.
+          <p className={styles.locked}>
+            Ugomba kuba member kugirango usome iyi nkuru.
           </p>
         )}
 
         {/* ACTIONS */}
         {isMember && (
           <div className={styles.actions}>
-            {prev && (
-              <Link href={`/post/${prev.id}`} className={styles.btn}>
-                ← Prev
-              </Link>
-            )}
+            {prev && <Link href={`/post/${prev.id}`}>← Prev</Link>}
+            {next && <Link href={`/post/${next.id}`}>Next →</Link>}
 
-            {next && (
-              <Link href={`/post/${next.id}`} className={styles.btn}>
-                Next →
-              </Link>
-            )}
-
-            <button onClick={handleCopy} className={styles.iconBtn}>
+            <button onClick={handleCopy}>
               <FaCopy /> Copy
             </button>
 
-            <button onClick={shareWhatsApp} className={styles.iconBtn}>
+            <button onClick={shareWhatsApp}>
               <FaWhatsapp /> WhatsApp
             </button>
 
-            <button onClick={shareFacebook} className={styles.iconBtn}>
+            <button onClick={shareFacebook}>
               <FaFacebook /> Facebook
             </button>
           </div>
         )}
 
         {/* COMMENTS */}
-        <div className={styles.commentsSection}>
+        <div className={styles.comments}>
           <h3>Comments</h3>
 
-          <form onSubmit={handleComment} className={styles.commentBox}>
-            <input
-              name="comment"
-              placeholder="Write comment..."
-              disabled={!isMember}
-            />
-            <button type="submit" disabled={!isMember}>
-              Send
-            </button>
+          <form onSubmit={handleComment}>
+            <input name="comment" placeholder="andika comment..." />
+            <button type="submit">Send</button>
           </form>
 
-          <div className={styles.commentList}>
-            {comments.map((c) => (
-              <div key={c.id} className={styles.commentItem}>
-                <strong>{c.author || "Anonymous"}:</strong> {c.text}
-              </div>
-            ))}
-          </div>
+          {comments.map((c) => (
+            <div key={c.id}>
+              <strong>{c.author || "Anonymous"}:</strong> {c.text}
+            </div>
+          ))}
         </div>
       </div>
     </div>
