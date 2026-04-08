@@ -73,13 +73,16 @@ export default function ThemeSwitcher() {
       </div>
 
       <style jsx>{`
-        .theme-switcher {
-          width: 100%;
-          margin-bottom: 120px;
-          display: flex;
-          justify-content: center;
-          padding: 0.5rem;
-        }
+.theme-switcher {
+  position: absolute;
+  top: 90px; /* ikibanza uhereye hejuru y’urupapuro */
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto; /* cyangwa 100% niba ushaka ihuze n’urupapuro */
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+}
 
         .row {
           display: flex;
