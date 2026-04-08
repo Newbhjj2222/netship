@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { db } from "../../components/firebase";
 import {
   doc,
@@ -8,9 +9,10 @@ import {
   orderBy,
   addDoc,
 } from "firebase/firestore";
+import { FaWhatsapp, FaFacebook, FaCopy } from "react-icons/fa";
 import styles from "../../styles/read.module.css";
 
-// ================= HELPER =================
+// ===== HELPER =====
 function parseHead(head) {
   const match = head?.match(/^(.*)\sS(\d+)\s?EP\s?(\d+)/i);
   if (!match) return null;
@@ -22,28 +24,24 @@ function parseHead(head) {
   };
 }
 
-// ================= SSR =================
+// ===== SSR =====
 export async function getServerSideProps({ params, req }) {
   const { id } = params;
 
-  const docRef = doc(db, "posts", id);
-  const snap = await getDoc(docRef);
+  const snap = await getDoc(doc(db, "posts", id));
 
-  if (!snap.exists()) {
-    return { notFound: true };
-  }
+  if (!snap.exists()) return { notFound: true };
 
   const post = { id, ...snap.data() };
-
   const parsed = parseHead(post.head);
 
   let seriesPosts = [];
   let currentIndex = 0;
 
   if (parsed) {
-    const snapshot = await getDocs(collection(db, "posts"));
+    const all = await getDocs(collection(db, "posts"));
 
-    seriesPosts = snapshot.docs
+    seriesPosts = all.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((p) => {
         const pParsed = parseHead(p.head);
@@ -59,22 +57,6 @@ export async function getServerSideProps({ params, req }) {
       });
 
     currentIndex = seriesPosts.findIndex((p) => p.id === id);
-  }
-
-  // ===== COOKIE (progress) =====
-  const cookies = req.headers.cookie || "";
-  const match = cookies.match(/lastEpisode=([^;]+)/);
-
-  if (match) {
-    const savedId = match[1];
-    if (savedId !== id) {
-      return {
-        redirect: {
-          destination: `/post/${savedId}`,
-          permanent: false,
-        },
-      };
-    }
   }
 
   // ===== COMMENTS =====
@@ -97,7 +79,7 @@ export async function getServerSideProps({ params, req }) {
   };
 }
 
-// ================= PAGE =================
+// ===== PAGE =====
 export default function ReadPage({
   post,
   seriesPosts,
@@ -107,14 +89,16 @@ export default function ReadPage({
   const next = seriesPosts[currentIndex + 1];
   const prev = seriesPosts[currentIndex - 1];
 
-  // ===== SET COOKIE =====
+  // ===== SAVE PROGRESS =====
   const saveProgress = () => {
-    document.cookie = `lastEpisode=${post.id}; path=/`;
+    const key = post.head?.split(" S")[0];
+    document.cookie = `last_${key}=${post.id}; path=/`;
   };
 
   // ===== COPY =====
   const handleCopy = () => {
-    navigator.clipboard.writeText(post.story || "");
+    const text = post.story?.replace(/<[^>]+>/g, "");
+    navigator.clipboard.writeText(text || "");
     alert("Episode copied");
   };
 
@@ -136,7 +120,7 @@ export default function ReadPage({
     );
   };
 
-  // ===== COMMENT SUBMIT =====
+  // ===== COMMENT =====
   const handleComment = async (e) => {
     e.preventDefault();
     const text = e.target.comment.value;
@@ -152,8 +136,8 @@ export default function ReadPage({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.book} onLoad={saveProgress}>
+    <div className={styles.container} onLoad={saveProgress}>
+      <div className={styles.book}>
         <h1 className={styles.title}>{post.head}</h1>
 
         <div
@@ -161,35 +145,35 @@ export default function ReadPage({
           dangerouslySetInnerHTML={{ __html: post.story }}
         />
 
-        {/* NAVIGATION */}
+        {/* ACTIONS */}
         <div className={styles.actions}>
           {prev && (
-            <a href={`/post/${prev.id}`} className={styles.btn}>
+            <Link href={`/post/${prev.id}`} className={styles.btn}>
               ← Prev
-            </a>
+            </Link>
           )}
 
           {next && (
-            <a href={`/post/${next.id}`} className={styles.btn}>
+            <Link href={`/post/${next.id}`} className={styles.btn}>
               Next →
-            </a>
+            </Link>
           )}
 
-          <button onClick={handleCopy} className={styles.btn}>
-            Copy
+          <button onClick={handleCopy} className={styles.iconBtn}>
+            <FaCopy /> Copy
           </button>
 
-          <button onClick={shareWhatsApp} className={styles.btn}>
-            WhatsApp
+          <button onClick={shareWhatsApp} className={styles.iconBtn}>
+            <FaWhatsapp /> WhatsApp
           </button>
 
-          <button onClick={shareFacebook} className={styles.btn}>
-            Facebook
+          <button onClick={shareFacebook} className={styles.iconBtn}>
+            <FaFacebook /> Facebook
           </button>
         </div>
 
         {/* COMMENTS */}
-        <div className={styles.comments}>
+        <div className={styles.commentsSection}>
           <h3>Comments</h3>
 
           <form onSubmit={handleComment} className={styles.commentBox}>
@@ -197,11 +181,13 @@ export default function ReadPage({
             <button type="submit">Send</button>
           </form>
 
-          {comments.map((c) => (
-            <div key={c.id} className={styles.comment}>
-              {c.text}
-            </div>
-          ))}
+          <div className={styles.commentList}>
+            {comments.map((c) => (
+              <div key={c.id} className={styles.commentItem}>
+                {c.text}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
