@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaPaintBrush, FaFont } from "react-icons/fa";
 
 export default function ThemeSwitcher() {
@@ -8,21 +8,24 @@ export default function ThemeSwitcher() {
   const [color, setColor] = useState('black');
   const [font, setFont] = useState('sans');
 
-  const applyTheme = () => {
+  // AUTO APPLY (nta button)
+  useEffect(() => {
     document.body.style.backgroundColor = bg;
     document.body.style.color = color;
     document.body.style.fontFamily =
-      font === 'sans' ? 'Arial, Helvetica, sans-serif' :
-      font === 'mono' ? 'Courier New, monospace' :
-      'Georgia, serif';
-  };
+      font === 'sans'
+        ? 'Arial, Helvetica, sans-serif'
+        : font === 'mono'
+        ? 'Courier New, monospace'
+        : 'Georgia, serif';
+  }, [bg, color, font]);
 
   return (
     <div className="theme-switcher">
-      <h3><FaPaintBrush /> Customize Theme</h3>
 
-      <div className="theme-control">
-        <label>Background: </label>
+      <div className="row">
+        <FaPaintBrush />
+
         <select value={bg} onChange={(e) => setBg(e.target.value)}>
           <option value="white">White</option>
           <option value="black">Black</option>
@@ -31,22 +34,18 @@ export default function ThemeSwitcher() {
           <option value="yellow">Yellow</option>
           <option value="gray">Gray</option>
         </select>
-      </div>
 
-      <div className="theme-control">
-        <label>Text Color: </label>
         <select value={color} onChange={(e) => setColor(e.target.value)}>
-          <option value="white">White</option>
-          <option value="black">Black</option>
-          <option value="blue">Blue</option>
-          <option value="green">Green</option>
-          <option value="yellow">Yellow</option>
-          <option value="gray">Gray</option>
+          <option value="black">Text Black</option>
+          <option value="white">Text White</option>
+          <option value="blue">Text Blue</option>
+          <option value="green">Text Green</option>
+          <option value="yellow">Text Yellow</option>
+          <option value="gray">Text Gray</option>
         </select>
-      </div>
 
-      <div className="theme-control">
-        <label>Font: </label>
+        <FaFont />
+
         <select value={font} onChange={(e) => setFont(e.target.value)}>
           <option value="sans">Sans</option>
           <option value="mono">Mono</option>
@@ -54,80 +53,53 @@ export default function ThemeSwitcher() {
         </select>
       </div>
 
-      <button className="apply-btn" onClick={applyTheme}>
-        <FaFont /> Apply Theme
-      </button>
-
       <style jsx>{`
         .theme-switcher {
-          max-width: 400px;
-          margin: 1rem auto;
-          padding: 1rem 1.5rem;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          background: #f9f9f9;
+          width: 100%;
+          padding: 0.5rem;
           display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-          user-select: none; /* disable text selection */
+          justify-content: center;
+          user-select: none;
         }
 
-        .theme-switcher h3 {
-          margin: 0 0 0.5rem 0;
+        .row {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          font-size: 1.25rem;
-        }
-
-        .theme-control {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+          background: #f3f4f6;
+          padding: 0.5rem 0.75rem;
+          border-radius: 999px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+          flex-wrap: wrap;
         }
 
         select {
           padding: 0.3rem 0.5rem;
           border-radius: 6px;
           border: 1px solid #ccc;
+          font-size: 0.9rem;
           cursor: pointer;
+          background: white;
         }
 
-        .apply-btn {
-          margin-top: 1rem;
-          padding: 0.5rem 1rem;
-          background: #0070f3;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          transition: background 0.2s;
+        svg {
+          font-size: 1rem;
         }
 
-        .apply-btn:hover {
-          background: #005bb5;
-        }
-
-        @media (max-width: 480px) {
-          .theme-switcher {
-            padding: 0.75rem 1rem;
+        @media (max-width: 600px) {
+          .row {
+            gap: 0.3rem;
+            padding: 0.4rem;
           }
 
-          .theme-switcher h3 {
-            font-size: 1rem;
-          }
-
-          select, .apply-btn {
-            font-size: 0.9rem;
+          select {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.4rem;
           }
         }
 
         html, body {
-          touch-action: manipulation; /* disable zoom gestures on mobile */
+          touch-action: manipulation;
           overscroll-behavior: none;
         }
       `}</style>
