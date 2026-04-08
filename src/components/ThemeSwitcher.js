@@ -76,7 +76,7 @@ export default function ThemeSwitcher() {
 .theme-switcher {
   position: absolute;
   top: 90px; /* ikibanza uhereye hejuru y’urupapuro */
-  left: 10px;
+  left: 50%;
   transform: translateX(-50%);
   width: 100%; /* cyangwa 100% niba ushaka ihuze n’urupapuro */
   display: flex;
