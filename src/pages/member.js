@@ -1,16 +1,14 @@
-'use client';
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+// pages/member.js
 import { db } from "../components/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import Cookies from "js-cookie";
+import cookie from "cookie";
 import { FaUser, FaUserTie, FaHandsHelping, FaWhatsapp } from "react-icons/fa";
 import styles from "../styles/member.module.css";
 
+// ===== SSR ONLY =====
 export async function getServerSideProps({ req }) {
   const cookies = req.headers.cookie ? req.headers.cookie : "";
-  const parsedCookies = require("cookie").parse(cookies);
+  const parsedCookies = cookie.parse(cookies);
   const userCookie = parsedCookies.user ? JSON.parse(parsedCookies.user) : null;
 
   if (!userCookie) {
@@ -35,20 +33,6 @@ export async function getServerSideProps({ req }) {
 }
 
 export default function MemberPage({ username, roleData }) {
-  const router = useRouter();
-  const [clientRoleData, setClientRoleData] = useState({});
-
-  // ===== Load roleData from cookies on client side =====
-  useEffect(() => {
-    const roles = ["member", "umujyanama", "umuterankunga"];
-    let data = {};
-    roles.forEach((role) => {
-      const cookieData = Cookies.get(role);
-      if (cookieData) data[role] = JSON.parse(cookieData);
-    });
-    if (Object.keys(data).length) setClientRoleData(data);
-  }, []);
-
   const goWhatsApp = (role) => {
     const number = "250722319367";
     const message = `Muraho, ndifuza ubufasha ku bijyanye na ${role}.`;
@@ -61,7 +45,7 @@ export default function MemberPage({ username, roleData }) {
       key: "member",
       label: "Membership",
       icon: <FaUser />,
-      description: clientRoleData.member
+      description: roleData.member
         ? "Urimo kuba member"
         : "Nturi member",
     },
@@ -69,7 +53,7 @@ export default function MemberPage({ username, roleData }) {
       key: "umujyanama",
       label: "Umujyanama",
       icon: <FaUserTie />,
-      description: clientRoleData.umujyanama
+      description: roleData.umujyanama
         ? "Uri umujyanama"
         : "Nturi umujyanama",
     },
@@ -77,7 +61,7 @@ export default function MemberPage({ username, roleData }) {
       key: "umuterankunga",
       label: "Umuterankunga",
       icon: <FaHandsHelping />,
-      description: clientRoleData.umuterankunga
+      description: roleData.umuterankunga
         ? "Uri umuterankunga"
         : "Nturi umuterankunga",
     },
@@ -89,7 +73,8 @@ export default function MemberPage({ username, roleData }) {
 
       <div className={styles.cardsWrapper}>
         {roles.map((role) => {
-          const data = roleData[role.key] || clientRoleData[role.key];
+          const data = roleData[role.key];
+
           return (
             <div key={role.key} className={styles.card}>
               <div className={styles.icon}>{role.icon}</div>
