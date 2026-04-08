@@ -89,7 +89,7 @@ export async function getServerSideProps() {
 export default function Posts({ folders }) {
   return (
     <div className={styles.container}>
-      <h1 className={styles.heading}>Stories</h1>
+      <h1 className={styles.heading}>Inkuru zose</h1>
 
       <div className={styles.grid}>
         {folders.map((folder, i) => (
@@ -125,7 +125,7 @@ export default function Posts({ folders }) {
               {folder.firstEpisodeId && (
                 <Link href={`/post/${folder.firstEpisodeId}`}>
                   <button className={styles.button}>
-                    Read Stories
+                    Read Story
                   </button>
                 </Link>
               )}
