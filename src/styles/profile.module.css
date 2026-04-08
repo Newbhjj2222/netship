@@ -3,7 +3,7 @@
 /* Container */
 .container {
   display: flex;
-  top: 70px;
+  margin-top: 70px;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
