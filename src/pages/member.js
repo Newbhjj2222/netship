@@ -5,9 +5,9 @@ import cookie from "cookie";
 import { FaUser, FaUserTie, FaHandsHelping, FaWhatsapp } from "react-icons/fa";
 import styles from "../styles/member.module.css";
 
+// ===== SSR =====
 export async function getServerSideProps({ req }) {
-  // ===== PARSE COOKIES =====
-  const cookies = req.headers.cookie || "";
+  const cookies = req.headers.cookie ? req.headers.cookie : "";
   const parsedCookies = cookie.parse(cookies);
   const userCookie = parsedCookies.user ? JSON.parse(parsedCookies.user) : null;
 
@@ -17,40 +17,46 @@ export async function getServerSideProps({ req }) {
 
   const username = userCookie.username;
 
-  // ===== CHECK ROLES =====
   const roles = ["member", "umujyanama", "umuterankunga"];
   let roleData = {};
 
   for (let role of roles) {
     const q = query(collection(db, role + "s"), where("username", "==", username));
     const snap = await getDocs(q);
+
     if (!snap.empty) {
       const data = snap.docs[0].data();
-      // check membership expiry if role is member
+
+      // Kureba niba member cyangwa izindi roles ziri active
       if (role === "member") {
         const now = new Date();
-        const expires = data.subscriptionExpiresAt?.toDate?.() || new Date(0);
-        data.active = data.isMember && expires > now;
+        const expires = data.subscriptionExpiresAt
+          ? data.subscriptionExpiresAt.toDate()
+          : null;
+        data.isActive = data.isMember && expires && expires > now;
+        data.expiresAt = expires;
       } else {
-        data.active = true; // umujyanama & umuterankunga always active
+        // Kuri umujyanama na umuterankunga
+        data.isActive = true; // assume always active if exists
       }
+
       roleData[role] = data;
     } else {
-      roleData[role] = { active: false };
+      // Nta data yabonetse
+      roleData[role] = { isActive: false };
     }
   }
 
   return { props: { username, roleData } };
 }
 
+// ===== COMPONENT =====
 export default function MemberPage({ username, roleData }) {
-  const goWhatsApp = (role) => {
-    if (typeof window !== "undefined") {
-      const number = "250722319367";
-      const message = `Muraho, ndifuza ubufasha ku bijyanye na ${role}.`;
-      const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-      window.open(url, "_blank");
-    }
+  const goWhatsApp = (roleLabel) => {
+    const number = "250722319367";
+    const message = `Muraho, ndifuza ubufasha ku bijyanye na ${roleLabel}.`;
+    const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
   };
 
   const roles = [
@@ -77,24 +83,33 @@ export default function MemberPage({ username, roleData }) {
 
       <div className={styles.cardsWrapper}>
         {roles.map((role) => {
-          const data = roleData[role.key] || { active: false };
-          const isActive = data.active;
+          const data = roleData[role.key];
+          const active = data?.isActive;
+
           return (
             <div key={role.key} className={styles.card}>
               <div className={styles.icon}>{role.icon}</div>
               <h2>{role.label}</h2>
-              <span className={isActive ? styles.activeBadge : styles.nonActiveBadge}>
-                {isActive ? "Active" : "Non-Active"}
+
+              {/* Active / Non-Active Badge */}
+              <span
+                className={active ? styles.activeBadge : styles.nonActiveBadge}
+              >
+                {active ? "Active" : "Non-Active"}
               </span>
 
               {/* Membership dates */}
-              {role.key === "member" && data.subscriptionExpiresAt?.toDate && (
+              {role.key === "member" && data?.expiresAt && (
                 <p>
-                  Igihe izarangirira: {data.subscriptionExpiresAt.toDate().toLocaleDateString()}
+                  Igihe izarangirira:{" "}
+                  {data.expiresAt.toLocaleDateString()}
                 </p>
               )}
 
-              <button onClick={() => goWhatsApp(role.label)} className={styles.whatsappBtn}>
+              <button
+                className={styles.whatsappBtn}
+                onClick={() => goWhatsApp(role.label)}
+              >
                 <FaWhatsapp /> Twandikire
               </button>
             </div>
