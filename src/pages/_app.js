@@ -1,6 +1,7 @@
 // pages/_app.js
 import "@/styles/globals.css";
 import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 import { useEffect } from "react";
 import Cookies from "js-cookie";
 
@@ -24,6 +25,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
+      <Header />
       <Component {...pageProps} />
       <Footer /> {/* 🔥 THIS IS THE MAGIC */}
     </>
