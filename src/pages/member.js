@@ -45,27 +45,29 @@ export default function MemberPage({ username, roleData }) {
       key: "member",
       label: "Membership",
       icon: <FaUser />,
-      description: roleData.member
-        ? "Urimo kuba member"
-        : "Nturi member",
     },
     {
       key: "umujyanama",
       label: "Umujyanama",
       icon: <FaUserTie />,
-      description: roleData.umujyanama
-        ? "Uri umujyanama"
-        : "Nturi umujyanama",
     },
     {
       key: "umuterankunga",
       label: "Umuterankunga",
       icon: <FaHandsHelping />,
-      description: roleData.umuterankunga
-        ? "Uri umuterankunga"
-        : "Nturi umuterankunga",
     },
   ];
+
+  const checkStatus = (roleKey) => {
+    const data = roleData[roleKey];
+    if (!data) return { active: false };
+    if (roleKey === "member") {
+      const expires = data.subscriptionExpiresAt?.toDate?.() || new Date(0);
+      const now = new Date();
+      return { active: expires > now, expires };
+    }
+    return { active: true };
+  };
 
   return (
     <div className={styles.container}>
@@ -74,19 +76,19 @@ export default function MemberPage({ username, roleData }) {
       <div className={styles.cardsWrapper}>
         {roles.map((role) => {
           const data = roleData[role.key];
+          const status = checkStatus(role.key);
 
           return (
             <div key={role.key} className={styles.card}>
               <div className={styles.icon}>{role.icon}</div>
               <h2>{role.label}</h2>
-              <p>{role.description}</p>
 
-              {/* Membership dates */}
-              {role.key === "member" && data && (
-                <p>
-                  Igihe yatangiye: {data.subscriptionStart?.toDate?.().toLocaleDateString()} <br />
-                  Igihe izarangirira: {data.subscriptionExpiresAt?.toDate?.().toLocaleDateString()}
-                </p>
+              <span className={`${styles.badge} ${status.active ? styles.active : styles.nonActive}`}>
+                {status.active ? "Active" : "Non-Active"}
+              </span>
+
+              {role.key === "member" && data && status.expires && (
+                <p>Igihe membership izarangirira: {status.expires.toLocaleDateString()}</p>
               )}
 
               <button
