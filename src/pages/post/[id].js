@@ -119,7 +119,40 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
   }
 
   // ===== COPY =====
-  const handleCopy = () => {
+  const handleCopy = async () => {
+  try {
+    // 1. Fata username muri cookies
+    const username = Cookies.get("username");
+
+    if (!username) {
+      alert("You must be logged in!");
+      return;
+    }
+
+    // 2. Reba muri contracts collection
+    const q = query(
+      collection(db, "contracts"),
+      where("fullName", "==", username)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      alert("No contract found for this user.");
+      return;
+    }
+
+    // 3. Reba niba harimo approved
+    const hasApproved = snapshot.docs.some(
+      (doc) => doc.data().approved === true
+    );
+
+    if (!hasApproved) {
+      alert("Your contract is not approved yet.");
+      return;
+    }
+
+    // 4. Niba byemewe → copy text
     const text = post.story
       ?.replace(/<[^>]+>/g, "")
       .split("\n")
@@ -127,12 +160,16 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
       .filter((p) => p.length)
       .join("\n\n");
 
-    navigator.clipboard.writeText(text);
-    alert("Copied!");
-  };
+    await navigator.clipboard.writeText(text);
 
+    alert("Copied!");
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong.");
+  }
+};
   const link = `https://www.newtalentsg.co.rw/post/${post.id}`;
-  const summary = post.story?.replace(/<[^>]+>/g, "").slice(0, 120);
+  const summary = post.story?.replace(/<[^>]+>/g, "").slice(0, 820);
 
   const shareWhatsApp = () => window.open(`https://wa.me/?text=${encodeURIComponent(summary + " " + link)}`);
   const shareFacebook = () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${link}`);
