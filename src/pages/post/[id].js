@@ -121,15 +121,19 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
   // ===== COPY =====
   const handleCopy = async () => {
   try {
-    // 1. Fata username muri cookies
-    const username = Cookies.get("username");
+    // 1. fata cookies zose muri browser
+    const cookies = cookie.parse(document.cookie || "");
 
-    if (!username) {
+    const userCookie = cookies.user ? JSON.parse(cookies.user) : null;
+
+    if (!userCookie) {
       alert("You must be logged in!");
       return;
     }
 
-    // 2. Reba muri contracts collection
+    const username = userCookie.username;
+
+    // 2. reba muri contracts
     const q = query(
       collection(db, "contracts"),
       where("fullName", "==", username)
@@ -142,7 +146,7 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
       return;
     }
 
-    // 3. Reba niba harimo approved
+    // 3. check approved
     const hasApproved = snapshot.docs.some(
       (doc) => doc.data().approved === true
     );
@@ -152,7 +156,7 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
       return;
     }
 
-    // 4. Niba byemewe → copy text
+    // 4. copy
     const text = post.story
       ?.replace(/<[^>]+>/g, "")
       .split("\n")
