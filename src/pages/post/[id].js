@@ -142,7 +142,7 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      alert("No contract found for this user.");
+      alert("Nta content licensing ufite ikwemerera gukoresha iyi nkuru ahandi. kubindi bisobanuro twandikire Whatsapp");
       return;
     }
 
@@ -152,7 +152,7 @@ export default function ReadPage({ post, seriesPosts, currentIndex, comments, us
     );
 
     if (!hasApproved) {
-      alert("Your contract is not approved yet.");
+      alert("Content licensing yawe ntabwo iremezwa. ukeneye ubufasha cyangwa ubusobanuro twandikire Whatsapp.");
       return;
     }
 
