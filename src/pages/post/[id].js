@@ -10,11 +10,10 @@ import {
   addDoc,
   serverTimestamp,
   where,
-  setDoc,
 } from "firebase/firestore";
-import { useEffect } from "react";
 import cookie from "cookie";
 import Link from "next/link";
+import { useEffect } from "react";
 import { FaWhatsapp, FaFacebook, FaCopy } from "react-icons/fa";
 import styles from "../../styles/read.module.css";
 
@@ -33,8 +32,16 @@ function parseHead(head) {
 export async function getServerSideProps({ req, params }) {
   const { id } = params;
 
+  if (!id) return { notFound: true };
+
   const cookies = cookie.parse(req.headers.cookie || "");
-  const userCookie = cookies.user ? JSON.parse(cookies.user) : null;
+
+  let userCookie = null;
+  try {
+    userCookie = cookies.user ? JSON.parse(cookies.user) : null;
+  } catch {
+    userCookie = null;
+  }
 
   if (!userCookie) {
     return { redirect: { destination: "/login", permanent: false } };
@@ -42,6 +49,7 @@ export async function getServerSideProps({ req, params }) {
 
   const username = userCookie.username;
 
+  // MEMBERSHIP
   const q = query(collection(db, "members"), where("username", "==", username));
   const snapMembers = await getDocs(q);
 
@@ -50,16 +58,25 @@ export async function getServerSideProps({ req, params }) {
 
   snapMembers.forEach((d) => {
     const data = d.data();
-    const expires = data.subscriptionExpiresAt?.toDate?.() || new Date(0);
+
+    let expires = new Date(0);
+    try {
+      if (data.subscriptionExpiresAt) {
+        expires = data.subscriptionExpiresAt.toDate();
+      }
+    } catch {}
+
     if (data.isMember && expires > new Date()) {
       isMember = true;
     } else {
-      message = "Membership yawe yararangiye cyangwa ntiwigeze uyihabwa twandikire Whatsapp tugufashe..";
+      message = "Membership yawe yararangiye cyangwa ntiyabonekaga.";
     }
   });
 
+  // POST
   const postSnap = await getDoc(doc(db, "posts", id));
   if (!postSnap.exists()) return { notFound: true };
+
   const post = { id, ...postSnap.data() };
   const parsed = parseHead(post.head);
 
@@ -84,6 +101,7 @@ export async function getServerSideProps({ req, params }) {
     currentIndex = seriesPosts.findIndex((p) => p.id === id);
   }
 
+  // COMMENTS
   const commentsSnap = await getDocs(
     query(collection(db, "posts", id, "comments"), orderBy("createdAt", "desc"))
   );
@@ -119,124 +137,67 @@ export default function ReadPage({
   const next = seriesPosts[currentIndex + 1];
   const prev = seriesPosts[currentIndex - 1];
 
-  // ===== SAVE PROGRESS =====
-  const saveProgress = async () => {
-    try {
-      const scrollPosition = window.scrollY;
-
-      await setDoc(
-        doc(db, "reading_progress", `${username}_${post.id}`),
-        {
-          username,
-          postId: post.id,
-          lastPosition: scrollPosition,
-          updatedAt: serverTimestamp(),
-        }
-      );
-    } catch (e) {
-      console.error("Failed to save progress", e);
-    }
-  };
-
-  // ===== AUTO SAVE ON SCROLL =====
+  // ===== LOAD + SAVE PROGRESS =====
   useEffect(() => {
+    // LOAD
+    fetch(`/api/progress?username=${username}&postId=${post.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        window.scrollTo(0, data.lastPosition || 0);
+      });
+
+    // SAVE (debounced)
+    let timeout;
+
     const handleScroll = () => {
-      saveProgress();
+      clearTimeout(timeout);
+
+      timeout = setTimeout(() => {
+        fetch("/api/progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username,
+            postId: post.id,
+            lastPosition: window.scrollY,
+          }),
+        });
+      }, 1000);
     };
 
     window.addEventListener("scroll", handleScroll);
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // ===== AUTO RESUME =====
-  useEffect(() => {
-    const loadProgress = async () => {
-      try {
-        const ref = doc(db, "reading_progress", `${username}_${post.id}`);
-        const snap = await getDoc(ref);
-
-        if (snap.exists()) {
-          const data = snap.data();
-          window.scrollTo(0, data.lastPosition || 0);
-        }
-      } catch (e) {
-        console.error("Failed to load progress", e);
-      }
-    };
-
-    loadProgress();
-  }, []);
-
-  // ===== ALERT =====
+  // ALERT
   if (!isMember && typeof window !== "undefined") {
     setTimeout(() => alert(message), 500);
   }
 
-  // ===== COPY =====
+  // COPY
   const handleCopy = async () => {
-    try {
-      const cookies = cookie.parse(document.cookie || "");
-      const userCookie = cookies.user
-        ? JSON.parse(cookies.user)
-        : null;
+    const text = post.story
+      ?.replace(/<[^>]+>/g, "")
+      .split("\n")
+      .map((p) => p.trim())
+      .filter((p) => p.length)
+      .join("\n\n");
 
-      if (!userCookie) {
-        alert("You must be logged in!");
-        return;
-      }
-
-      const username = userCookie.username;
-
-      const q = query(
-        collection(db, "contracts"),
-        where("fullName", "==", username)
-      );
-
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        alert("Nta content licensing ufite, ikwemerera gukoresha iyi nkuru ahandi. twandikire Whatsapp tugufashe.");
-        return;
-      }
-
-      const hasApproved = snapshot.docs.some(
-        (doc) => doc.data().approved === true
-      );
-
-      if (!hasApproved) {
-        alert("Content licensing yawe ntabwo iremezwa, twandikire Whatsapp tugufashe.");
-        return;
-      }
-
-      const text = post.story
-        ?.replace(/<[^>]+>/g, "")
-        .split("\n")
-        .map((p) => p.trim())
-        .filter((p) => p.length)
-        .join("\n\n");
-
-      await navigator.clipboard.writeText(text);
-      alert("Copied!");
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong.");
-    }
+    await navigator.clipboard.writeText(text);
+    alert("Copied!");
   };
 
   const link = `https://www.newtalentsg.co.rw/post/${post.id}`;
   const summary = post.story?.replace(/<[^>]+>/g, "").slice(0, 820);
 
   const shareWhatsApp = () =>
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(summary + " " + link)}`
-    );
+    window.open(`https://wa.me/?text=${encodeURIComponent(summary + " " + link)}`);
 
   const shareFacebook = () =>
-    window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${link}`
-    );
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${link}`);
 
-  // ===== COMMENT =====
+  // COMMENT
   const handleComment = async (e) => {
     e.preventDefault();
     if (!isMember) return;
@@ -259,9 +220,7 @@ export default function ReadPage({
       <div className={styles.book}>
         <h1 className={styles.title}>{post.head}</h1>
 
-        {post.image && (
-          <img src={post.image} className={styles.image} />
-        )}
+        {post.image && <img src={post.image} className={styles.image} />}
 
         {isMember ? (
           <div
