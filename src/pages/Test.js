@@ -1,13 +1,14 @@
 import { useState } from "react";
+import { FaImage, FaVideo, FaPaperPlane } from "react-icons/fa";
 
 export default function Home() {
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ⚠️ Replace these with your real values
-  const PAGE_ID = "920667774474033";
-  const ACCESS_TOKEN = "EAATg539P23YBQ8mPCDry6JWUfP221aZCwZC4HPIdMQTyglHsZCp8Gt16vmgtWSMhTaYHZBZC9DqManPefZBpuEYWjRokfmQ3vORntMNZCRv7Pr7Pue5ia0CJgpjkZCuulD6fgQtRCrhAwiSlyCSh4ldrpFEspSH6Q4ZArswCJi3j2YkW6MLZCBhZAfr3cRZAcXD8O7uclUOW";
+  // ⚠️ Replace with your real values
+  const PAGE_ID = "YOUR_PAGE_ID";
+  const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN";
 
   const handlePost = async () => {
     if (!message && !file) {
@@ -21,7 +22,6 @@ export default function Home() {
       let url = "";
       let formData = new FormData();
 
-      // Decide type
       if (file) {
         if (file.type.startsWith("image")) {
           url = `https://graph.facebook.com/${PAGE_ID}/photos`;
@@ -45,8 +45,7 @@ export default function Home() {
       const data = await res.json();
 
       if (data.error) {
-        console.log(data.error);
-        alert("Hari ikibazo: " + data.error.message);
+        alert(data.error.message);
       } else {
         alert("Byoherejwe neza 🚀");
         setMessage("");
@@ -60,67 +59,50 @@ export default function Home() {
   };
 
   return (
-    <div className="container">
-      <h1>Facebook Auto Poster</h1>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-lg p-6 rounded-2xl shadow-xl border border-gray-300 dark:border-gray-700 bg-[var(--background)]">
+        
+        {/* Header */}
+        <h1 className="text-2xl font-bold text-center mb-6">
+          Facebook Auto Poster
+        </h1>
 
-      <textarea
-        placeholder="Andika message..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-      />
+        {/* Textarea */}
+        <textarea
+          placeholder="Andika message yawe hano..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="w-full h-28 p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent outline-none resize-none"
+        />
 
-      <input
-        type="file"
-        onChange={(e) => setFile(e.target.files[0])}
-      />
+        {/* File Upload */}
+        <label className="flex items-center justify-between mt-4 p-3 rounded-xl border border-dashed border-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+          <span className="flex items-center gap-2 text-sm">
+            {file ? file.name : "Hitamo ifoto cyangwa video"}
+          </span>
 
-      <button onClick={handlePost} disabled={loading}>
-        {loading ? "Birimo kohereza..." : "Post"}
-      </button>
+          <div className="flex gap-3 text-lg">
+            <FaImage />
+            <FaVideo />
+          </div>
 
-      <style jsx>{`
-        .container {
-          max-width: 500px;
-          margin: 50px auto;
-          padding: 20px;
-          background: #111;
-          color: white;
-          border-radius: 10px;
-          text-align: center;
-          font-family: Arial;
-        }
+          <input
+            type="file"
+            hidden
+            onChange={(e) => setFile(e.target.files[0])}
+          />
+        </label>
 
-        h1 {
-          margin-bottom: 20px;
-        }
-
-        textarea {
-          width: 100%;
-          height: 100px;
-          margin-bottom: 10px;
-          padding: 10px;
-          border-radius: 5px;
-          border: none;
-        }
-
-        input {
-          margin-bottom: 10px;
-        }
-
-        button {
-          width: 100%;
-          padding: 10px;
-          background: #1877f2;
-          border: none;
-          color: white;
-          border-radius: 5px;
-          cursor: pointer;
-        }
-
-        button:hover {
-          background: #0f5dc1;
-        }
-      `}</style>
+        {/* Button */}
+        <button
+          onClick={handlePost}
+          disabled={loading}
+          className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+        >
+          <FaPaperPlane />
+          {loading ? "Birimo kohereza..." : "Post kuri Facebook"}
+        </button>
+      </div>
     </div>
   );
 }
