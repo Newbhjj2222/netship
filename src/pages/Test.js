@@ -6,8 +6,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   // ⚠️ Replace these with your real values
-  const PAGE_ID = "YOUR_PAGE_ID";
-  const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN";
+  const PAGE_ID = "920667774474033";
+  const ACCESS_TOKEN = "EAATg539P23YBQ8mPCDry6JWUfP221aZCwZC4HPIdMQTyglHsZCp8Gt16vmgtWSMhTaYHZBZC9DqManPefZBpuEYWjRokfmQ3vORntMNZCRv7Pr7Pue5ia0CJgpjkZCuulD6fgQtRCrhAwiSlyCSh4ldrpFEspSH6Q4ZArswCJi3j2YkW6MLZCBhZAfr3cRZAcXD8O7uclUOW";
 
   const handlePost = async () => {
     if (!message && !file) {
