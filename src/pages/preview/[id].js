@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import Head from "next/head";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../components/firebase";
+import { db } from "../../components/firebaseClient";
 import html2canvas from "html2canvas";
 
 /* =========================
@@ -34,12 +34,9 @@ export async function getServerSideProps(context) {
 export default function Preview({ data }) {
   const cardRef = useRef(null);
 
-  /* =========================
-     WAIT IMAGES
-  ========================= */
+  /* wait images */
   const waitImages = async (el) => {
     const imgs = el.querySelectorAll("img");
-
     await Promise.all(
       [...imgs].map((img) => {
         if (img.complete) return;
@@ -51,9 +48,7 @@ export default function Preview({ data }) {
     );
   };
 
-  /* =========================
-     DOWNLOAD
-  ========================= */
+  /* download */
   const downloadImage = async () => {
     const el = cardRef.current;
     if (!el) return;
@@ -79,16 +74,15 @@ export default function Preview({ data }) {
   return (
     <>
       <Head>
-        <title>Preview</title>
+        <title>NetBoard Preview</title>
       </Head>
 
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-6 gap-6">
 
-        {/* CARD */}
+        {/* TEMPLATE */}
         <div
-          id="card"
           ref={cardRef}
-          className="w-[350px] sm:w-[420px] aspect-square bg-white rounded-2xl overflow-hidden shadow-lg"
+          className="w-full max-w-[420px] aspect-square bg-white rounded-2xl overflow-hidden shadow-md"
         >
           {/* BACKGROUND */}
           <img
@@ -98,46 +92,36 @@ export default function Preview({ data }) {
           />
 
           {/* CONTENT */}
-          <div className="p-4">
+          <div className="p-4 flex flex-col h-[60%] justify-between">
 
             {/* HEADER */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-bold text-black text-sm sm:text-base">
+                {data.username}
+              </p>
 
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300">
-                <img
-                  src={data.profilePic}
-                  crossOrigin="anonymous"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <p className="font-bold text-black">
-                  {data.username}
-                </p>
-
-                <span className="bg-blue-500 text-white text-xs px-1 rounded">
-                  ✔
-                </span>
-              </div>
+              <span className="bg-blue-500 text-white text-[10px] sm:text-xs px-1.5 py-[2px] rounded-full">
+                ✔
+              </span>
             </div>
 
             {/* QUOTE */}
-            <p className="mt-4 text-black text-sm whitespace-pre-line">
+            <p className="text-black text-sm sm:text-base leading-relaxed whitespace-pre-line mt-3">
               {data.quote}
             </p>
 
             {/* WATERMARK */}
-            <p className="mt-6 text-red-500 text-xs">
+            <p className="text-red-500 text-xs mt-4">
               NetBoard
             </p>
+
           </div>
         </div>
 
-        {/* DOWNLOAD BUTTON */}
+        {/* BUTTON */}
         <button
           onClick={downloadImage}
-          className="bg-black text-white px-6 py-3 rounded-xl"
+          className="bg-black text-white px-6 py-3 rounded-xl w-full max-w-[420px]"
         >
           Download Image
         </button>
