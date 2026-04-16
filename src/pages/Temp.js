@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import html2canvas from "html2canvas";
+import domtoimage from "dom-to-image-more";
 
 export default function Home() {
   const cardRef = useRef(null);
@@ -19,18 +19,20 @@ export default function Home() {
   const downloadImage = async () => {
     if (!cardRef.current) return;
 
-    const canvas = await html2canvas(cardRef.current, {
-      useCORS: true,
-      allowTaint: false,
-      scale: 2,
-      backgroundColor: null,
-    });
+    try {
+      const dataUrl = await domtoimage.toPng(cardRef.current, {
+        cacheBust: true,
+        quality: 1,
+        bgcolor: null,
+      });
 
-    const link = document.createElement("a");
-    link.download = "quote-card.png";
-    link.href = canvas.toDataURL("image/png");
-    link.target = "_blank";
-    link.click();
+      const link = document.createElement("a");
+      link.download = "quote-card.png";
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
   };
 
   return (
@@ -72,7 +74,6 @@ export default function Home() {
         <img
           src="/logo.png"
           alt="bg"
-          crossOrigin="anonymous"
           className="absolute inset-0 w-full h-full object-cover"
         />
 
@@ -82,9 +83,8 @@ export default function Home() {
         {/* content */}
         <div className="relative bg-white/90 backdrop-blur-md rounded-2xl p-4 w-[85%]">
 
-          {/* header */}
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300">
               {image && (
                 <img
                   src={image}
@@ -105,10 +105,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* quote */}
           <p className="mt-4 text-sm sm:text-base leading-relaxed whitespace-pre-line">
             {quote || "Andika quote yawe hano..."}
           </p>
+
         </div>
       </div>
     </div>
