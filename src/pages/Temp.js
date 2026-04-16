@@ -1,187 +1,93 @@
-"use client";
+import { useState } from "react";
+import { useRouter } from "next/router";
+import Cookies from "js-cookie";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../components/firebase";
 
-import { useRef, useState } from "react";
-import html2canvas from "html2canvas";
+/* CLOUDINARY */
+const uploadToCloudinary = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "Newtalents");
+  formData.append("cloud_name", "dilowy3fd");
+
+  const endpoint =
+    "https://api.cloudinary.com/v1_1/dilowy3fd/image/upload";
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+  return data.secure_url;
+};
 
 export default function Home() {
-  const cardRef = useRef(null);
+  const router = useRouter();
 
-  const [name, setName] = useState("Anonymous");
-  const [quote, setQuote] = useState("Write something meaningful...");
-  const [profilePic, setProfilePic] = useState(null);
-  const [bgImage, setBgImage] = useState(null);
-  const [template, setTemplate] = useState("default");
+  const [quote, setQuote] = useState("");
+  const [file, setFile] = useState(null);
+  const [savedId, setSavedId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // PROFILE IMAGE
-  const handleProfile = (e) => {
-    const file = e.target.files?.[0];
-    if (file) setProfilePic(URL.createObjectURL(file));
-  };
+  const username = Cookies.get("username") || "Anonymous";
 
-  // BACKGROUND IMAGE
-  const handleBg = (e) => {
-    const file = e.target.files?.[0];
-    if (file) setBgImage(URL.createObjectURL(file));
-  };
+  const handleGenerate = async () => {
+    if (!file || !quote) return alert("Fill everything");
 
-  // WAIT IMAGES LOAD
-  const waitImages = async (el) => {
-    const imgs = el.querySelectorAll("img");
+    setLoading(true);
 
-    await Promise.all(
-      [...imgs].map((img) => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((res) => {
-          img.onload = res;
-          img.onerror = res;
-        });
-      })
-    );
-  };
+    // upload image
+    const imageUrl = await uploadToCloudinary(file);
 
-  // DOWNLOAD FUNCTION (100% STABLE)
-  const downloadImage = async () => {
-    const el = cardRef.current;
-    if (!el) return;
-
-    const html2canvasLib = (await import("html2canvas")).default;
-
-    await waitImages(el);
-    await new Promise((r) => setTimeout(r, 200));
-
-    const canvas = await html2canvasLib(el, {
-      useCORS: true,
-      allowTaint: false,
-      scale: 3,
-      backgroundColor: null,
-      scrollX: 0,
-      scrollY: 0,
+    // save to firestore
+    const docRef = await addDoc(collection(db, "quotes"), {
+      username,
+      quote,
+      profilePic: imageUrl,
+      createdAt: serverTimestamp(),
     });
 
-    const link = document.createElement("a");
-    link.download = `design-${Date.now()}.png`;
-    link.href = canvas.toDataURL("image/png");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setSavedId(docRef.id);
+    setLoading(false);
   };
 
-  // TEMPLATE COLORS
-  const getTemplateStyle = () => {
-    switch (template) {
-      case "blue":
-        return "#3b82f6";
-      case "green":
-        return "#22c55e";
-      case "dark":
-        return "#111827";
-      case "gradient":
-        return "linear-gradient(135deg,#667eea,#764ba2)";
-      default:
-        return "#ffffff";
-    }
+  const goToPreview = () => {
+    router.push(`/preview/${savedId}`);
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center p-4 gap-4"
-      style={{ marginTop: "80px" }}
-    >
+    <div style={{ marginTop: "80px" }} className="p-4 flex flex-col items-center gap-4">
 
-      {/* INPUTS */}
-      <div className="w-full max-w-md flex flex-col gap-3">
+      <textarea
+        placeholder="Andika quote..."
+        value={quote}
+        onChange={(e) => setQuote(e.target.value)}
+        className="p-3 border rounded-xl w-full max-w-md"
+      />
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Name"
-          className="p-3 border rounded-xl"
-        />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setFile(e.target.files[0])}
+      />
 
-        <textarea
-          value={quote}
-          onChange={(e) => setQuote(e.target.value)}
-          placeholder="Quote..."
-          className="p-3 border rounded-xl h-24"
-        />
-
-        <input type="file" accept="image/*" onChange={handleProfile} />
-        <input type="file" accept="image/*" onChange={handleBg} />
-
-        {/* TEMPLATE SELECT */}
-        <select
-          value={template}
-          onChange={(e) => setTemplate(e.target.value)}
-          className="p-3 border rounded-xl"
-        >
-          <option value="default">Default</option>
-          <option value="blue">Blue</option>
-          <option value="green">Green</option>
-          <option value="dark">Dark</option>
-          <option value="gradient">Gradient</option>
-        </select>
-
+      {!savedId ? (
         <button
-          onClick={downloadImage}
-          className="bg-black text-white p-3 rounded-xl"
+          onClick={handleGenerate}
+          className="bg-black text-white px-6 py-3 rounded-xl"
         >
-          Download Image
+          {loading ? "Processing..." : "Generate"}
         </button>
-      </div>
-
-      {/* CARD */}
-      <div
-        ref={cardRef}
-        className="w-[400px] aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center"
-        style={{
-          background: getTemplateStyle(),
-        }}
-      >
-
-        {/* BACKGROUND IMAGE (optional override) */}
-        {bgImage && (
-          <img
-            src={bgImage}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        )}
-
-        {/* overlay */}
-        <div className="absolute inset-0 bg-black/40" />
-
-        {/* CONTENT */}
-        <div className="relative z-10 bg-white/90 rounded-2xl p-4 w-[85%]">
-
-          {/* HEADER */}
-          <div className="flex items-center gap-3">
-
-            {/* PROFILE PIC */}
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300">
-              {profilePic && (
-                <img
-                  src={profilePic}
-                  className="w-full h-full object-cover"
-                />
-              )}
-            </div>
-
-            {/* NAME + BADGE */}
-            <div className="flex items-center gap-2">
-              <p className="font-bold">{name}</p>
-
-              <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">✔</span>
-              </div>
-            </div>
-          </div>
-
-          {/* QUOTE */}
-          <p className="mt-4 text-sm leading-relaxed whitespace-pre-line">
-            {quote}
-          </p>
-
-        </div>
-      </div>
+      ) : (
+        <button
+          onClick={goToPreview}
+          className="bg-green-600 text-white px-6 py-3 rounded-xl"
+        >
+          Review Template
+        </button>
+      )}
     </div>
   );
 }
