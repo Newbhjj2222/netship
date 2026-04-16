@@ -7,43 +7,86 @@ export default function Home() {
   const cardRef = useRef(null);
 
   const [name, setName] = useState("Anonymous");
-  const [quote, setQuote] = useState("Write something powerful...");
+  const [quote, setQuote] = useState("Write something meaningful...");
   const [profilePic, setProfilePic] = useState(null);
   const [bgImage, setBgImage] = useState(null);
-
   const [template, setTemplate] = useState("default");
 
-  // PROFILE PIC
+  // PROFILE IMAGE
   const handleProfile = (e) => {
     const file = e.target.files?.[0];
     if (file) setProfilePic(URL.createObjectURL(file));
   };
 
   // BACKGROUND IMAGE
-  const handleBgImage = (e) => {
+  const handleBg = (e) => {
     const file = e.target.files?.[0];
     if (file) setBgImage(URL.createObjectURL(file));
   };
 
-  // DOWNLOAD FUNCTION (FIXED 100%)
+  // WAIT IMAGES LOAD
+  const waitImages = async (el) => {
+    const imgs = el.querySelectorAll("img");
+
+    await Promise.all(
+      [...imgs].map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((res) => {
+          img.onload = res;
+          img.onerror = res;
+        });
+      })
+    );
+  };
+
+  // DOWNLOAD FUNCTION (100% STABLE)
   const downloadImage = async () => {
+    const el = cardRef.current;
+    if (!el) return;
+
     const html2canvasLib = (await import("html2canvas")).default;
 
-    const canvas = await html2canvasLib(cardRef.current, {
+    await waitImages(el);
+    await new Promise((r) => setTimeout(r, 200));
+
+    const canvas = await html2canvasLib(el, {
       useCORS: true,
       allowTaint: false,
       scale: 3,
       backgroundColor: null,
+      scrollX: 0,
+      scrollY: 0,
     });
 
     const link = document.createElement("a");
-    link.download = "design.png";
+    link.download = `design-${Date.now()}.png`;
     link.href = canvas.toDataURL("image/png");
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+  };
+
+  // TEMPLATE COLORS
+  const getTemplateStyle = () => {
+    switch (template) {
+      case "blue":
+        return "#3b82f6";
+      case "green":
+        return "#22c55e";
+      case "dark":
+        return "#111827";
+      case "gradient":
+        return "linear-gradient(135deg,#667eea,#764ba2)";
+      default:
+        return "#ffffff";
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-4 gap-4" style={{ marginTop: "80px" }}>
+    <div
+      className="min-h-screen flex flex-col items-center p-4 gap-4"
+      style={{ marginTop: "80px" }}
+    >
 
       {/* INPUTS */}
       <div className="w-full max-w-md flex flex-col gap-3">
@@ -62,13 +105,10 @@ export default function Home() {
           className="p-3 border rounded-xl h-24"
         />
 
-        {/* PROFILE PIC */}
         <input type="file" accept="image/*" onChange={handleProfile} />
+        <input type="file" accept="image/*" onChange={handleBg} />
 
-        {/* BACKGROUND IMAGE */}
-        <input type="file" accept="image/*" onChange={handleBgImage} />
-
-        {/* TEMPLATE COLORS */}
+        {/* TEMPLATE SELECT */}
         <select
           value={template}
           onChange={(e) => setTemplate(e.target.value)}
@@ -94,18 +134,10 @@ export default function Home() {
         ref={cardRef}
         className="w-[400px] aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center"
         style={{
-          background:
-            template === "blue"
-              ? "#3b82f6"
-              : template === "green"
-              ? "#22c55e"
-              : template === "dark"
-              ? "#111827"
-              : template === "gradient"
-              ? "linear-gradient(135deg,#667eea,#764ba2)"
-              : "#ffffff",
+          background: getTemplateStyle(),
         }}
       >
+
         {/* BACKGROUND IMAGE (optional override) */}
         {bgImage && (
           <img
@@ -117,7 +149,7 @@ export default function Home() {
         {/* overlay */}
         <div className="absolute inset-0 bg-black/40" />
 
-        {/* CONTENT CARD */}
+        {/* CONTENT */}
         <div className="relative z-10 bg-white/90 rounded-2xl p-4 w-[85%]">
 
           {/* HEADER */}
