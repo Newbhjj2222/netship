@@ -1,170 +1,155 @@
+"use client";
+
 import { useRef, useState } from "react";
-import { useRouter } from "next/router";
 import html2canvas from "html2canvas";
-import Cookies from "js-cookie";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../components/firebase";
-
-/* =========================
-   🟢 CLOUDINARY FUNCTION (AS YOU PROVIDED)
-========================= */
-const uploadToCloudinary = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "Newtalents"); // replace na preset yawe niba itandukanye
-  formData.append("cloud_name", "dilowy3fd");
-
-  const endpoint =
-    "https://api.cloudinary.com/v1_1/dilowy3fd/image/upload";
-
-  const res = await fetch(endpoint, {
-    method: "POST",
-    body: formData,
-  });
-
-  const data = await res.json();
-  return data.secure_url;
-};
-
-/* =========================
-   FIRESTORE SAVE (quotes)
-========================= */
-const saveQuote = async (payload) => {
-  const docRef = await addDoc(collection(db, "quotes"), {
-    ...payload,
-    createdAt: serverTimestamp(),
-  });
-
-  return docRef.id;
-};
 
 export default function Home() {
   const cardRef = useRef(null);
-  const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [quote, setQuote] = useState("");
-  const [image, setImage] = useState(null);
-  const [template, setTemplate] = useState("logo.png");
+  const [name, setName] = useState("Anonymous");
+  const [quote, setQuote] = useState("Write something powerful...");
+  const [profilePic, setProfilePic] = useState(null);
+  const [bgImage, setBgImage] = useState(null);
 
-  /* =========================
-     COOKIE USERNAME
-  ========================= */
-  const cookieUsername = Cookies.get("username");
-  const finalUsername = cookieUsername || name || "Anonymous";
+  const [template, setTemplate] = useState("default");
 
-  const handleImage = (e) => {
+  // PROFILE PIC
+  const handleProfile = (e) => {
     const file = e.target.files?.[0];
-    if (file) setImage(URL.createObjectURL(file));
+    if (file) setProfilePic(URL.createObjectURL(file));
   };
 
-  /* =========================
-     EXPORT FLOW
-  ========================= */
-  const exportQuote = async () => {
-    const canvas = await html2canvas(cardRef.current, {
-      scale: 3,
+  // BACKGROUND IMAGE
+  const handleBgImage = (e) => {
+    const file = e.target.files?.[0];
+    if (file) setBgImage(URL.createObjectURL(file));
+  };
+
+  // DOWNLOAD FUNCTION (FIXED 100%)
+  const downloadImage = async () => {
+    const html2canvasLib = (await import("html2canvas")).default;
+
+    const canvas = await html2canvasLib(cardRef.current, {
       useCORS: true,
+      allowTaint: false,
+      scale: 3,
       backgroundColor: null,
     });
 
-    const blob = await new Promise((resolve) =>
-      canvas.toBlob(resolve, "image/png")
-    );
-
-    const file = new File([blob], "quote.png", {
-      type: "image/png",
-    });
-
-    // 1. upload to cloudinary
-    const imageUrl = await uploadToCloudinary(file);
-
-    // 2. save to firestore (quotes collection)
-    const id = await saveQuote({
-      username: finalUsername,
-      quote,
-      imageUrl,
-      template,
-    });
-
-    // 3. redirect to export page
-    router.push(`/export/${id}`);
+    const link = document.createElement("a");
+    link.download = "design.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center p-4 gap-5"
-      style={{ marginTop: "80px" }}
-    >
+    <div className="min-h-screen flex flex-col items-center p-4 gap-4" style={{ marginTop: "80px" }}>
 
-      {/* USERNAME INPUT (only if cookie missing) */}
-      {!cookieUsername && (
+      {/* INPUTS */}
+      <div className="w-full max-w-md flex flex-col gap-3">
+
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Andika izina..."
-          className="p-3 border rounded-xl w-full max-w-md"
+          placeholder="Name"
+          className="p-3 border rounded-xl"
         />
-      )}
 
-      {/* TEMPLATE SELECT */}
-      <select
-        value={template}
-        onChange={(e) => setTemplate(e.target.value)}
-        className="p-3 border rounded-xl w-full max-w-md"
-      >
-        <option value="logo.png">Draft (Default)</option>
-        <option value="blue.png">Blue Template</option>
-        <option value="green.png">Green Template</option>
-        <option value="dark.png">Dark Template</option>
-      </select>
+        <textarea
+          value={quote}
+          onChange={(e) => setQuote(e.target.value)}
+          placeholder="Quote..."
+          className="p-3 border rounded-xl h-24"
+        />
 
-      {/* QUOTE */}
-      <textarea
-        value={quote}
-        onChange={(e) => setQuote(e.target.value)}
-        placeholder="Andika quote..."
-        className="p-3 border rounded-xl w-full max-w-md h-24"
-      />
+        {/* PROFILE PIC */}
+        <input type="file" accept="image/*" onChange={handleProfile} />
 
-      {/* IMAGE UPLOAD */}
-      <input type="file" accept="image/*" onChange={handleImage} />
+        {/* BACKGROUND IMAGE */}
+        <input type="file" accept="image/*" onChange={handleBgImage} />
 
-      {/* PREVIEW CARD */}
+        {/* TEMPLATE COLORS */}
+        <select
+          value={template}
+          onChange={(e) => setTemplate(e.target.value)}
+          className="p-3 border rounded-xl"
+        >
+          <option value="default">Default</option>
+          <option value="blue">Blue</option>
+          <option value="green">Green</option>
+          <option value="dark">Dark</option>
+          <option value="gradient">Gradient</option>
+        </select>
+
+        <button
+          onClick={downloadImage}
+          className="bg-black text-white p-3 rounded-xl"
+        >
+          Download Image
+        </button>
+      </div>
+
+      {/* CARD */}
       <div
         ref={cardRef}
-        className="w-[400px] aspect-square relative overflow-hidden rounded-2xl bg-white shadow-xl"
+        className="w-[400px] aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center"
+        style={{
+          background:
+            template === "blue"
+              ? "#3b82f6"
+              : template === "green"
+              ? "#22c55e"
+              : template === "dark"
+              ? "#111827"
+              : template === "gradient"
+              ? "linear-gradient(135deg,#667eea,#764ba2)"
+              : "#ffffff",
+        }}
       >
-        {/* TEMPLATE BACKGROUND */}
-        <img
-          src={`/${template}`}
-          className="absolute w-full h-full object-cover"
-        />
+        {/* BACKGROUND IMAGE (optional override) */}
+        {bgImage && (
+          <img
+            src={bgImage}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
 
+        {/* overlay */}
         <div className="absolute inset-0 bg-black/40" />
 
-        {/* CONTENT */}
-        <div className="relative z-10 bg-white/90 p-4 w-[85%] mx-auto mt-10 rounded-xl">
+        {/* CONTENT CARD */}
+        <div className="relative z-10 bg-white/90 rounded-2xl p-4 w-[85%]">
 
-          <p className="font-bold text-black">
-            {finalUsername}
-          </p>
+          {/* HEADER */}
+          <div className="flex items-center gap-3">
 
-          <p className="mt-3 text-sm text-black whitespace-pre-line">
-            {quote || "Andika quote yawe hano..."}
+            {/* PROFILE PIC */}
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300">
+              {profilePic && (
+                <img
+                  src={profilePic}
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+
+            {/* NAME + BADGE */}
+            <div className="flex items-center gap-2">
+              <p className="font-bold">{name}</p>
+
+              <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs">✔</span>
+              </div>
+            </div>
+          </div>
+
+          {/* QUOTE */}
+          <p className="mt-4 text-sm leading-relaxed whitespace-pre-line">
+            {quote}
           </p>
 
         </div>
       </div>
-
-      {/* EXPORT BUTTON */}
-      <button
-        onClick={exportQuote}
-        className="bg-black text-white px-6 py-3 rounded-xl"
-      >
-        Export Image
-      </button>
-
     </div>
   );
 }
