@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import html2canvas from "html2canvas";
 import Cookies from "js-cookie";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../components/firebaseClient";
+import { db } from "../components/firebase";
 
 /* =========================
    🟢 CLOUDINARY FUNCTION (AS YOU PROVIDED)
