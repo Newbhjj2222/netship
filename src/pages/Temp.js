@@ -11,20 +11,37 @@ export default function Home() {
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImage(URL.createObjectURL(file));
-    }
+    if (file) setImage(URL.createObjectURL(file));
+  };
+
+  // 👇 wait images fully load (IMPORTANT FIX)
+  const waitForImages = async (element) => {
+    const images = element.querySelectorAll("img");
+
+    await Promise.all(
+      Array.from(images).map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((res) => {
+          img.onload = img.onerror = res;
+        });
+      })
+    );
   };
 
   const downloadImage = async () => {
     if (!cardRef.current) return;
 
-    // 👇 dynamic import to avoid Vercel SSR crash
     const domtoimage = (await import("dom-to-image-more")).default;
+
+    // 🔥 wait for layout stability
+    await waitForImages(cardRef.current);
 
     const dataUrl = await domtoimage.toPng(cardRef.current, {
       cacheBust: true,
       bgcolor: null,
+      style: {
+        transform: "scale(1)",
+      },
     });
 
     const link = document.createElement("a");
@@ -39,17 +56,16 @@ export default function Home() {
       {/* INPUTS */}
       <div className="w-full max-w-md flex flex-col gap-3">
         <input
-          type="text"
-          placeholder="Andika izina..."
           value={name}
           onChange={(e) => setName(e.target.value)}
+          placeholder="Andika izina..."
           className="p-3 border rounded-xl"
         />
 
         <textarea
-          placeholder="Andika quote..."
           value={quote}
           onChange={(e) => setQuote(e.target.value)}
+          placeholder="Andika quote..."
           className="p-3 border rounded-xl h-24"
         />
 
@@ -57,7 +73,7 @@ export default function Home() {
 
         <button
           onClick={downloadImage}
-          className="p-3 bg-black text-white rounded-xl"
+          className="bg-black text-white p-3 rounded-xl"
         >
           Download Image
         </button>
@@ -66,25 +82,26 @@ export default function Home() {
       {/* CARD */}
       <div
         ref={cardRef}
-        className="w-full max-w-md aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center"
+        className="w-[400px] aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center bg-white"
       >
+
         {/* BACKGROUND */}
         <img
           src="/logo.png"
           alt="bg"
+          crossOrigin="anonymous"
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* DARK OVERLAY */}
         <div className="absolute inset-0 bg-black/40" />
 
         {/* CONTENT */}
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl p-4 w-[85%]">
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl p-4 w-[85%] z-10">
 
           {/* HEADER */}
           <div className="flex items-center gap-3">
 
-            {/* PROFILE IMAGE */}
+            {/* PROFILE PIC */}
             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
               {image && (
                 <img
@@ -95,23 +112,21 @@ export default function Home() {
               )}
             </div>
 
-            {/* NAME + BADGE */}
+            {/* NAME + BADGE (FIXED ALIGNMENT) */}
             <div className="flex items-center gap-2">
-
-              <p className="font-bold text-sm sm:text-base">
+              <p className="font-bold text-sm">
                 {name || "Anonymous"}
               </p>
 
-              {/* VERIFICATION BADGE */}
-              <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                <span className="text-white text-xs">✔</span>
-              </div>
-
+              {/* VERIFIED BADGE ALWAYS INSIDE FLOW */}
+              <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+                ✔
+              </span>
             </div>
           </div>
 
           {/* QUOTE */}
-          <p className="mt-4 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+          <p className="mt-4 text-sm leading-relaxed whitespace-pre-line">
             {quote || "Andika quote yawe hano..."}
           </p>
 
