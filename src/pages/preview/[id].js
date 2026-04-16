@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import Head from "next/head";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../components/firebaseClient";
+import { db } from "../../components/firebase";
 import html2canvas from "html2canvas";
 
 /* =========================
