@@ -3,14 +3,14 @@ import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 
 export default function Home() {
-  const cardRef = useRef();
+  const cardRef = useRef(null);
 
   const [name, setName] = useState("");
   const [quote, setQuote] = useState("");
   const [image, setImage] = useState(null);
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       setImage(URL.createObjectURL(file));
     }
@@ -21,12 +21,15 @@ export default function Home() {
 
     const canvas = await html2canvas(cardRef.current, {
       useCORS: true,
+      allowTaint: false,
       scale: 2,
+      backgroundColor: null,
     });
 
     const link = document.createElement("a");
-    link.download = "quote.png";
+    link.download = "quote-card.png";
     link.href = canvas.toDataURL("image/png");
+    link.target = "_blank";
     link.click();
   };
 
@@ -60,27 +63,28 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Template */}
+      {/* CARD */}
       <div
         ref={cardRef}
         className="w-full max-w-md aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center"
       >
-        {/* Background image FIXED */}
+        {/* background */}
         <img
           src="/logo.png"
           alt="bg"
+          crossOrigin="anonymous"
           className="absolute inset-0 w-full h-full object-cover"
         />
 
         {/* overlay */}
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-black/40" />
 
-        {/* card */}
+        {/* content */}
         <div className="relative bg-white/90 backdrop-blur-md rounded-2xl p-4 w-[85%]">
 
           {/* header */}
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
               {image && (
                 <img
                   src={image}
@@ -92,7 +96,7 @@ export default function Home() {
 
             <div className="flex items-center gap-2">
               <p className="font-bold text-sm sm:text-base">
-                {name || " "}
+                {name || "Anonymous"}
               </p>
 
               <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
@@ -103,7 +107,7 @@ export default function Home() {
 
           {/* quote */}
           <p className="mt-4 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-            {quote || " "}
+            {quote || "Andika quote yawe hano..."}
           </p>
         </div>
       </div>
