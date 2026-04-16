@@ -5,10 +5,8 @@ import html2canvas from "html2canvas";
 export default function Home() {
   const cardRef = useRef();
 
-  const [name, setName] = useState("NetalentsG");
-  const [quote, setQuote] = useState(
-    "Nta muntu utagira ibibazo mu buzima..."
-  );
+  const [name, setName] = useState("");
+  const [quote, setQuote] = useState("");
   const [image, setImage] = useState(null);
 
   const handleImageUpload = (e) => {
@@ -19,10 +17,16 @@ export default function Home() {
   };
 
   const downloadImage = async () => {
-    const canvas = await html2canvas(cardRef.current);
+    if (!cardRef.current) return;
+
+    const canvas = await html2canvas(cardRef.current, {
+      useCORS: true,
+      scale: 2,
+    });
+
     const link = document.createElement("a");
     link.download = "quote.png";
-    link.href = canvas.toDataURL();
+    link.href = canvas.toDataURL("image/png");
     link.click();
   };
 
@@ -59,13 +63,15 @@ export default function Home() {
       {/* Template */}
       <div
         ref={cardRef}
-        className="w-full max-w-md aspect-square flex items-center justify-center rounded-2xl overflow-hidden relative"
-        style={{
-          backgroundImage: "url('/logo.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+        className="w-full max-w-md aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center"
       >
+        {/* Background image FIXED */}
+        <img
+          src="/logo.png"
+          alt="bg"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
         {/* overlay */}
         <div className="absolute inset-0 bg-black/40"></div>
 
@@ -74,7 +80,6 @@ export default function Home() {
 
           {/* header */}
           <div className="flex items-center gap-3">
-            {/* profile */}
             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300">
               {image && (
                 <img
@@ -85,11 +90,11 @@ export default function Home() {
               )}
             </div>
 
-            {/* name + badge */}
             <div className="flex items-center gap-2">
-              <p className="font-bold text-sm sm:text-base">{name}</p>
+              <p className="font-bold text-sm sm:text-base">
+                {name || " "}
+              </p>
 
-              {/* verified badge */}
               <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
                 <span className="text-white text-xs">✔</span>
               </div>
@@ -97,8 +102,8 @@ export default function Home() {
           </div>
 
           {/* quote */}
-          <p className="mt-4 text-sm sm:text-base leading-relaxed">
-            {quote}
+          <p className="mt-4 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+            {quote || " "}
           </p>
         </div>
       </div>
