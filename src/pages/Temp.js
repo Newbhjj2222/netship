@@ -14,17 +14,18 @@ export default function Home() {
     if (file) setImage(URL.createObjectURL(file));
   };
 
-  // 👇 wait images fully load (IMPORTANT FIX)
-  const waitForImages = async (element) => {
-    const images = element.querySelectorAll("img");
-
+  // ✅ wait images fully loaded
+  const waitImages = async (el) => {
+    const imgs = el.querySelectorAll("img");
     await Promise.all(
-      Array.from(images).map((img) => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((res) => {
-          img.onload = img.onerror = res;
-        });
-      })
+      [...imgs].map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise((res) => {
+              img.onload = res;
+              img.onerror = res;
+            })
+      )
     );
   };
 
@@ -33,19 +34,25 @@ export default function Home() {
 
     const domtoimage = (await import("dom-to-image-more")).default;
 
-    // 🔥 wait for layout stability
-    await waitForImages(cardRef.current);
+    await waitImages(cardRef.current);
+
+    const scale = 3; // 🔥 HD EXPORT
 
     const dataUrl = await domtoimage.toPng(cardRef.current, {
       cacheBust: true,
       bgcolor: null,
+      width: cardRef.current.offsetWidth * scale,
+      height: cardRef.current.offsetHeight * scale,
       style: {
-        transform: "scale(1)",
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
+        width: cardRef.current.offsetWidth + "px",
+        height: cardRef.current.offsetHeight + "px",
       },
     });
 
     const link = document.createElement("a");
-    link.download = "quote-card.png";
+    link.download = "quote-hd.png";
     link.href = dataUrl;
     link.click();
   };
@@ -75,14 +82,14 @@ export default function Home() {
           onClick={downloadImage}
           className="bg-black text-white p-3 rounded-xl"
         >
-          Download Image
+          Download HD Image
         </button>
       </div>
 
-      {/* CARD */}
+      {/* CARD (IMPORTANT: fixed design = no responsive chaos) */}
       <div
         ref={cardRef}
-        className="w-[400px] aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center bg-white"
+        className="w-[400px] h-[400px] relative overflow-hidden bg-white rounded-2xl flex items-center justify-center"
       >
 
         {/* BACKGROUND */}
@@ -96,37 +103,38 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/40" />
 
         {/* CONTENT */}
-        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl p-4 w-[85%] z-10">
+        <div className="relative z-10 bg-white/90 rounded-2xl p-4 w-[85%]">
 
           {/* HEADER */}
           <div className="flex items-center gap-3">
 
-            {/* PROFILE PIC */}
+            {/* PROFILE */}
             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
               {image && (
                 <img
                   src={image}
                   alt="profile"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover border-0 outline-none"
                 />
               )}
             </div>
 
-            {/* NAME + BADGE (FIXED ALIGNMENT) */}
+            {/* NAME + BADGE */}
             <div className="flex items-center gap-2">
-              <p className="font-bold text-sm">
+
+              <p className="font-bold text-sm border-0 outline-none">
                 {name || "Anonymous"}
               </p>
 
-              {/* VERIFIED BADGE ALWAYS INSIDE FLOW */}
-              <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+              {/* FIXED BADGE (NO BORDER ARTIFACTS) */}
+              <span className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-500 text-white text-xs border-0 shadow-none">
                 ✔
               </span>
             </div>
           </div>
 
           {/* QUOTE */}
-          <p className="mt-4 text-sm leading-relaxed whitespace-pre-line">
+          <p className="mt-4 text-sm leading-relaxed whitespace-pre-line border-0">
             {quote || "Andika quote yawe hano..."}
           </p>
 
