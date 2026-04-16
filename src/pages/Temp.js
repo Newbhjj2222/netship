@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import html2canvas from "html2canvas";
 
 export default function Home() {
   const cardRef = useRef(null);
@@ -8,13 +9,15 @@ export default function Home() {
   const [name, setName] = useState("");
   const [quote, setQuote] = useState("");
   const [image, setImage] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) setImage(URL.createObjectURL(file));
   };
 
-  // ✅ wait images fully loaded
+  // wait images fully load
   const waitImages = async (el) => {
     const imgs = el.querySelectorAll("img");
     await Promise.all(
@@ -29,36 +32,43 @@ export default function Home() {
     );
   };
 
-  const downloadImage = async () => {
+  const handlePreview = async () => {
     if (!cardRef.current) return;
 
-    const domtoimage = (await import("dom-to-image-more")).default;
+    setIsExporting(true);
 
+    // show preview area first (hidden -> visible)
+    setShowPreview(true);
+
+    // wait render + images
+    await new Promise((r) => setTimeout(r, 300));
     await waitImages(cardRef.current);
 
-    const scale = 3; // 🔥 HD EXPORT
-
-    const dataUrl = await domtoimage.toPng(cardRef.current, {
-      cacheBust: true,
-      bgcolor: null,
-      width: cardRef.current.offsetWidth * scale,
-      height: cardRef.current.offsetHeight * scale,
-      style: {
-        transform: `scale(${scale})`,
-        transformOrigin: "top left",
-        width: cardRef.current.offsetWidth + "px",
-        height: cardRef.current.offsetHeight + "px",
-      },
+    const canvas = await html2canvas(cardRef.current, {
+      scale: 3, // 🔥 HD+
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
     });
 
+    const dataUrl = canvas.toDataURL("image/png");
+
+    // auto download after preview render
     const link = document.createElement("a");
     link.download = "quote-hd.png";
     link.href = dataUrl;
     link.click();
+
+    setIsExporting(false);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-4">
+    <div className="min-h-screen flex flex-col items-center p-4 gap-4">
+
+      {/* INSTRUCTIONS */}
+      <div className="w-full max-w-md bg-black text-white p-3 rounded-xl text-sm text-center">
+        Click PREVIEW → then image will generate in HD and auto-download.
+      </div>
 
       {/* INPUTS */}
       <div className="w-full max-w-md flex flex-col gap-3">
@@ -78,66 +88,73 @@ export default function Home() {
 
         <input type="file" accept="image/*" onChange={handleImageUpload} />
 
+        {/* ONLY PREVIEW BUTTON */}
         <button
-          onClick={downloadImage}
-          className="bg-black text-white p-3 rounded-xl"
+          onClick={handlePreview}
+          disabled={isExporting}
+          className="p-3 bg-black text-white rounded-xl disabled:opacity-50"
         >
-          Download HD Image
+          {isExporting ? "Generating HD..." : "Preview & Download"}
         </button>
       </div>
 
-      {/* CARD (IMPORTANT: fixed design = no responsive chaos) */}
+      {/* PREVIEW AREA (HIDDEN UNTIL CLICK) */}
       <div
-        ref={cardRef}
-        className="w-[400px] h-[400px] relative overflow-hidden bg-white rounded-2xl flex items-center justify-center"
+        className={`w-full flex justify-center transition-all duration-300 ${
+          showPreview ? "opacity-100" : "opacity-0 pointer-events-none h-0"
+        }`}
       >
+        <div
+          ref={cardRef}
+          className="w-[350px] sm:w-[400px] aspect-square relative overflow-hidden rounded-2xl flex items-center justify-center bg-white"
+        >
 
-        {/* BACKGROUND */}
-        <img
-          src="/logo.png"
-          alt="bg"
-          crossOrigin="anonymous"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+          {/* BACKGROUND */}
+          <img
+            src="/logo.png"
+            className="absolute inset-0 w-full h-full object-cover"
+            crossOrigin="anonymous"
+          />
 
-        <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-black/40" />
 
-        {/* CONTENT */}
-        <div className="relative z-10 bg-white/90 rounded-2xl p-4 w-[85%]">
+          {/* CONTENT */}
+          <div className="relative z-10 bg-white/90 rounded-2xl p-4 w-[85%]">
 
-          {/* HEADER */}
-          <div className="flex items-center gap-3">
+            {/* HEADER */}
+            <div className="flex items-center gap-3">
 
-            {/* PROFILE */}
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
-              {image && (
-                <img
-                  src={image}
-                  alt="profile"
-                  className="w-full h-full object-cover border-0 outline-none"
-                />
-              )}
+              {/* PROFILE */}
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
+                {image && (
+                  <img
+                    src={image}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+
+              {/* NAME + BADGE */}
+              <div className="flex items-center gap-2">
+
+                <p className="font-bold text-sm sm:text-base">
+                  {name || "Anonymous"}
+                </p>
+
+                {/* VERIFIED BADGE */}
+                <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+                  ✔
+                </span>
+
+              </div>
             </div>
 
-            {/* NAME + BADGE */}
-            <div className="flex items-center gap-2">
+            {/* QUOTE */}
+            <p className="mt-4 text-sm sm:text-base whitespace-pre-line leading-relaxed">
+              {quote || "Andika quote yawe hano..."}
+            </p>
 
-              <p className="font-bold text-sm border-0 outline-none">
-                {name || "Anonymous"}
-              </p>
-
-              {/* FIXED BADGE (NO BORDER ARTIFACTS) */}
-              <span className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-500 text-white text-xs border-0 shadow-none">
-                ✔
-              </span>
-            </div>
           </div>
-
-          {/* QUOTE */}
-          <p className="mt-4 text-sm leading-relaxed whitespace-pre-line border-0">
-            {quote || "Andika quote yawe hano..."}
-          </p>
-
         </div>
       </div>
     </div>
