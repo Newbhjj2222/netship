@@ -4,8 +4,19 @@ import html2canvas from "html2canvas";
 
 export default function Home() {
   const cardRef = useRef();
-  const [quote, setQuote] = useState("Andika amagambo yawe hano...");
-  const [name, setName] = useState("Izina ryawe");
+
+  const [name, setName] = useState("NetalentsG");
+  const [quote, setQuote] = useState(
+    "Nta muntu utagira ibibazo mu buzima..."
+  );
+  const [image, setImage] = useState(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(URL.createObjectURL(file));
+    }
+  };
 
   const downloadImage = async () => {
     const canvas = await html2canvas(cardRef.current);
@@ -16,54 +27,78 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: 20, fontFamily: "sans-serif" }}>
-      <h2>Quote Generator</h2>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-4">
 
       {/* Inputs */}
-      <input
-        type="text"
-        placeholder="Andika quote..."
-        value={quote}
-        onChange={(e) => setQuote(e.target.value)}
-        style={{ width: "100%", marginBottom: 10, padding: 10 }}
-      />
+      <div className="w-full max-w-md flex flex-col gap-3">
+        <input
+          type="text"
+          placeholder="Andika izina..."
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="p-3 rounded-xl border"
+        />
 
-      <input
-        type="text"
-        placeholder="Izina..."
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={{ width: "100%", marginBottom: 20, padding: 10 }}
-      />
+        <textarea
+          placeholder="Andika quote..."
+          value={quote}
+          onChange={(e) => setQuote(e.target.value)}
+          className="p-3 rounded-xl border h-24"
+        />
 
-      <button onClick={downloadImage} style={{ padding: 10 }}>
-        Download Image
-      </button>
+        <input type="file" accept="image/*" onChange={handleImageUpload} />
+
+        <button
+          onClick={downloadImage}
+          className="p-3 rounded-xl bg-black text-white"
+        >
+          Download Image
+        </button>
+      </div>
 
       {/* Template */}
       <div
         ref={cardRef}
+        className="w-full max-w-md aspect-square flex items-center justify-center rounded-2xl overflow-hidden relative"
         style={{
-          width: 400,
-          height: 400,
-          marginTop: 30,
-          background: "linear-gradient(to top, #1e3c72, #2a5298)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          backgroundImage: "url('/logo.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
-        <div
-          style={{
-            background: "#fff",
-            padding: 20,
-            borderRadius: 20,
-            width: "85%",
-          }}
-        >
-          <p style={{ fontSize: 18 }}>{quote}</p>
-          <p style={{ marginTop: 20, fontWeight: "bold" }}>
-            — {name}
+        {/* overlay */}
+        <div className="absolute inset-0 bg-black/40"></div>
+
+        {/* card */}
+        <div className="relative bg-white/90 backdrop-blur-md rounded-2xl p-4 w-[85%]">
+
+          {/* header */}
+          <div className="flex items-center gap-3">
+            {/* profile */}
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300">
+              {image && (
+                <img
+                  src={image}
+                  alt="profile"
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+
+            {/* name + badge */}
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-sm sm:text-base">{name}</p>
+
+              {/* verified badge */}
+              <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-xs">✔</span>
+              </div>
+            </div>
+          </div>
+
+          {/* quote */}
+          <p className="mt-4 text-sm sm:text-base leading-relaxed">
+            {quote}
           </p>
         </div>
       </div>
